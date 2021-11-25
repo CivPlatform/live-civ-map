@@ -1,0 +1,55 @@
+{
+	"name": "live-civ-map-web",
+	"version": "0.0.0",
+	"private": true,
+	"author": "Gjum",
+	"license": "All Rights Reserved",
+	"scripts": {
+		"start": "react-scripts start",
+		"build": "react-scripts build",
+		"test": "react-scripts test",
+		"eject": "react-scripts eject"
+	},
+	"dependencies": {
+		"@rehooks/local-storage": "2.4.0",
+		"leaflet": "^1.7.1",
+		"react": "^17.0.2",
+		"react-dom": "^17.0.2",
+		"react-leaflet": "^3.2.2",
+		"react-relay": "^12.0.0",
+		"swr": "^1.0.1"
+	},
+	"devDependencies": {
+		"@types/leaflet": "^1.7.6",
+		"@types/react": "^17.0.0",
+		"@types/react-dom": "^17.0.0",
+		"http-proxy-middleware": "^2.0.1",
+		"react-scripts": "4.0.3",
+		"typescript": "^4.1.2"
+	},
+	"prettier": {
+		"useTabs": true,
+		"tabWidth": 2,
+		"trailingComma": "es5",
+		"singleQuote": true,
+		"semi": false
+	},
+	"eslintConfig": {
+		"extends": [
+			"react-app",
+			"react-app/jest"
+		]
+	},
+	"browserslist": {
+		"production": [
+			">0.2%",
+			"not dead",
+			"not op_mini all"
+		],
+		"development": [
+			"last 1 chrome version",
+			"last 1 firefox version",
+			"last 1 safari version"
+		]
+	}
+}
