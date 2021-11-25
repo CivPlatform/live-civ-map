@@ -1,0 +1,32 @@
+{
+	"name": "live-civ-map-server",
+	"version": "0.0.0",
+	"private": true,
+	"author": "Gjum",
+	"license": "All Rights Reserved",
+	"type": "module",
+	"scripts": {
+		"start": "node dist/main.js",
+		"start:dev": "ts-node -r dotenv/config src/main.ts",
+		"build": "tsc"
+	},
+	"prettier": {
+		"useTabs": true,
+		"tabWidth": 2,
+		"trailingComma": "es5",
+		"singleQuote": true,
+		"semi": false
+	},
+	"dependencies": {
+		"node-fetch": "^3.1.0",
+		"node-static": "^0.7.11",
+		"ws": "^8.3.0"
+	},
+	"devDependencies": {
+		"@types/node": "^16.11.10",
+		"@types/node-static": "^0.7.7",
+		"@types/ws": "^8.2.0",
+		"ts-node": "^10.4.0",
+		"typescript": "^4.5.2"
+	}
+}

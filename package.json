@@ -1,0 +1,15 @@
+{
+	"_note": "Heroku requires `package.json` at the root to recognize the project as NodeJS.",
+	"name": "live-civ-map",
+	"version": "0.0.0",
+	"private": true,
+	"author": "Gjum",
+	"license": "All Rights Reserved",
+	"scripts": {
+		"heroku-postbuild": "yarn --cwd server --production=false install && yarn --cwd server build"
+	},
+	"engines": {
+		"yarn": "1.x",
+		"node": "16.x"
+	}
+}
