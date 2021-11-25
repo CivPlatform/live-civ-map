@@ -1,9 +1,33 @@
-import { setAuthError, setAuthToken } from './state'
+import { DiscordUser } from './state'
 
 // react-js only exposes env starting with REACT_APP_ https://create-react-app.dev/docs/adding-custom-environment-variables/
 const DISCORD_APP_ID = process.env.REACT_APP_DISCORD_APP_ID
 const DISCORD_OAUTH2_REDIRECT_URI =
 	process.env.REACT_APP_DISCORD_OAUTH2_REDIRECT_URI
+
+export const tokenLSKey = 'LiveCivMap.discordToken'
+
+type LoginStatus =
+	| { token?: undefined; profile?: undefined; error?: undefined } // logged out
+	| { token: string; profile: DiscordUser; error?: undefined }
+	| { error: string; token?: undefined; profile?: undefined }
+
+let status: LoginStatus = {}
+
+export const getLoginStatus = () => status
+
+export function logOut() {
+	status = {}
+	window.localStorage.removeItem(tokenLSKey)
+}
+
+function setAuthSuccess(token: string, profile: DiscordUser) {
+	status = { token, profile }
+}
+
+function setAuthError(error: string) {
+	status = { error }
+}
 
 export function prepareOAuthLoginUrl() {
 	if (!DISCORD_APP_ID) throw new Error(`Missing DISCORD_APP_ID`)
@@ -39,21 +63,20 @@ export function prepareOAuthLoginUrl() {
 	].join('&')
 }
 
-export function checkUrlParamsLogin() {
+export async function checkUrlParamsLogin() {
 	try {
 		if (!window.localStorage) return
 		{
 			// check if already logged in
-			const { discordToken, discordTokenExpiration } = getLocalStorageJson(
-				'LiveCivMap.discordToken'
-			)
+			const { discordToken, discordTokenExpiration } =
+				getLocalStorageJson(tokenLSKey)
 			if (discordToken) {
 				if (discordTokenExpiration && +discordTokenExpiration > Date.now()) {
-					return setAuthToken(discordToken)
-				} else {
-					const expiryStr = new Date(+discordTokenExpiration).toISOString()
-					console.log(`Discord token expired ${expiryStr}`)
+					const dUser = await fetchDiscordUserProfile(discordToken)
+					if (dUser.id) return setAuthSuccess(discordToken, dUser)
 				}
+				const expiryStr = new Date(+discordTokenExpiration).toISOString()
+				console.log(`Discord token invalid or expired ${expiryStr}`)
 			}
 		}
 		const fragmentParams = new URLSearchParams(
@@ -77,6 +100,9 @@ export function checkUrlParamsLogin() {
 				return setAuthError(`No Discord token received`)
 			}
 
+			const profile = await fetchDiscordUserProfile(discordToken)
+			if (!profile.id) return setAuthError('Invalid token: no profile')
+
 			// good token. store it, and clean url
 
 			window.localStorage.removeItem('LiveCivMap.discordCsrfToken')
@@ -86,31 +112,22 @@ export function checkUrlParamsLogin() {
 			const discordTokenExpiration =
 				+(fragmentParams.get('expires_in') || 0) * 1000 + Date.now()
 
+			setAuthSuccess(discordToken, profile)
 			window.localStorage.setItem(
-				'LiveCivMap.discordToken',
+				tokenLSKey,
 				JSON.stringify({ discordToken, discordTokenExpiration })
 			)
 
-			return setAuthToken(discordToken)
+			return
 		}
-
-		// no success logging in; redirect to discord login which will then redirect us back here
-		document.location.href = prepareOAuthLoginUrl()
 	} catch (err) {
 		console.error('While performing Discord login:', err)
 	}
 }
 
-export interface DiscordUser {
-	id: string
-	username: string
-	discriminator: string
-	avatar?: string
-}
-
 type UndefinedFields<T> = { [k in keyof T]?: undefined }
 
-export async function fetchDiscordUserData(
+export async function fetchDiscordUserProfile(
 	token: string
 ): Promise<DiscordUser | UndefinedFields<DiscordUser>> {
 	try {
@@ -127,6 +144,15 @@ export async function fetchDiscordUserData(
 	} catch (err) {
 		console.error(`Failed fetching discord user info:`, err)
 		return {}
+	}
+}
+
+export function avatarUrlForUser(user: DiscordUser) {
+	if (user.avatar) {
+		return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+	} else {
+		const nr = +user.discriminator % 5
+		return `https://cdn.discordapp.com/embed/avatars/${nr}.png`
 	}
 }
 
