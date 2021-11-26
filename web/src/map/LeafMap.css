@@ -1,0 +1,22 @@
+.leaflet-container {
+	background: none;
+}
+
+.leaflet-tile,
+.leaflet-image-layer {
+	image-rendering: pixelated !important;
+	image-rendering: crisp-edges !important;
+	image-rendering: -moz-crisp-edges !important;
+}
+
+.LeafMap-coords {
+	z-index: 401;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	padding: 0.5em 1em;
+	font-size: 12px;
+	color: black;
+	background-color: white;
+	box-shadow: 0px 0px 4px -1px #00000070;
+}

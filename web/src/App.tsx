@@ -1,26 +1,21 @@
 import './App.css'
-import { avatarUrlForUser, useDiscordProfile } from './DiscordLogin'
+import {
+	avatarUrlForUser,
+	prepareOAuthLoginUrl,
+	useDiscordProfile,
+} from './DiscordLogin'
+import FeaturesMap from './map/FeaturesMap'
 
 function App() {
 	return (
 		<div className="App">
-			<div
-				className="App-Map"
-				style={{
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-					minHeight: '100%',
-				}}
-			>
-				Map
-			</div>
-			<div className="App-Menu">
+			<FeaturesMap height="100vh" />
+			<div className="App-Menu" style={{ zIndex: 1000 }}>
 				<div>
 					<img src="" alt="Logo" />
 					<span>Menu</span>
 				</div>
-				<div style={{ flex: 1 }} />
+				<div style={{ flex: 1, minHeight: '1em' }} />
 				<DiscordUserIcon />
 			</div>
 		</div>
@@ -34,7 +29,7 @@ export function DiscordUserIcon() {
 
 	if (!profile) {
 		return (
-			<div>
+			<div onClick={() => (document.location.href = prepareOAuthLoginUrl())}>
 				<img src="" alt="" />
 				<span>Log in with Discord</span>
 			</div>
@@ -43,7 +38,7 @@ export function DiscordUserIcon() {
 	const avatarUrl = avatarUrlForUser(profile)
 	return (
 		<div>
-			<img src={avatarUrl} alt="Discord avatar" />
+			<img src={avatarUrl} alt="Discord avatar" style={{ borderRadius: 999 }} />
 			<span>
 				@{profile.username}#{profile.discriminator}
 			</span>
