@@ -1,13 +1,18 @@
+import useLocalStorage from '@rehooks/local-storage'
 import './App.css'
 import {
 	avatarUrlForUser,
 	prepareOAuthLoginUrl,
 	useDiscordProfile,
 } from './DiscordLogin'
-import FeaturesMap from './map/FeaturesMap'
+import { FeaturesMap } from './map/FeaturesMap'
+import { Layer } from './map/Layer'
 
 function App() {
-	const layers = [{ url: 'ws://localhost:5000/' }]
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let [layers, setLayers] = useLocalStorage<Layer[]>('LiveCivMap:layers')
+	if (!layers) layers = [{ url: 'ws://localhost:5000/' }]
+
 	return (
 		<div className="App">
 			<FeaturesMap layers={layers} height="100vh" />

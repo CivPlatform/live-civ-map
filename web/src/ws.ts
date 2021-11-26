@@ -1,4 +1,4 @@
-/** connect with current token,
+/** connect with current Discord token,
  * reconnect if token changes. */
 export class WSClient<WSServerMessage, WSClientMessage> {
 	readonly url: string

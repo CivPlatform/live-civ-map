@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { DiscordUser, useDiscordToken } from './DiscordLogin'
-import { Feature } from './map/features'
+import { Feature } from './map/Feature'
 import { WSClient } from './ws'
 
 export type WSRelayedMessage = { type: 'map:feature'; feature: Feature }
