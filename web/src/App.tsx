@@ -15,7 +15,7 @@ function App() {
 
 	return (
 		<div className="App">
-			<FeaturesMap layers={layers} height="100vh" />
+			<FeaturesMap layers={layers} controls={{}} height="100vh" />
 			<div className="App-Menu" style={{ zIndex: 1000 }}>
 				<div>
 					<img src="" alt="Logo" />

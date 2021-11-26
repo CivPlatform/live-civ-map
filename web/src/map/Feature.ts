@@ -1,15 +1,25 @@
-// import { Bounds, XZ } from './spatial'
+import { Bounds, XZ } from './spatial'
 
-export type FeatureGeometry = { x: number; z: number }
-// | { x: number; z: number; radius: number }
-// | { x: number; z: number; rect_size: number }
-// | { rectangle: Bounds }
-// | { lines: XZ[][] }
-// | { polygons: XZ[][] }
-// | { map_image: { url: string; bounds: Bounds } }
-
-export interface Feature {
-	/** internal only */
+export interface Feature<G extends FeatureGeometry = FeatureGeometry> {
+	/** should never be exposed to user */
 	id: string
-	geometry: FeatureGeometry
+	geometry: G
+	extra?: any
 }
+
+export type FeatureGeometry =
+	| MarkerGeometry
+	| CircleGeometry
+	| RectCenterGeometry
+	| RectBoundsGeometry
+	| LinesGeometry
+	| PolygonsGeometry
+	| MapImageGeometry
+
+export type MarkerGeometry = { x: number; z: number }
+export type CircleGeometry = { x: number; z: number; radius: number }
+export type RectCenterGeometry = { x: number; z: number; rect_size: number }
+export type RectBoundsGeometry = { rectangle: Bounds }
+export type LinesGeometry = { lines: XZ[][] }
+export type PolygonsGeometry = { polygons: XZ[][] }
+export type MapImageGeometry = { map_image: { url: string; bounds: Bounds } }
