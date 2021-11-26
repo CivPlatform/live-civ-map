@@ -44,6 +44,7 @@ function CivLayer(props: { layer: Layer; controls: MapControls }) {
 					<CivMarker
 						feature={feature as Feature<MarkerGeometry>}
 						controls={controls}
+						key={feature.id}
 					/>
 				)
 			})}
@@ -63,7 +64,6 @@ function CivMarker(props: {
 			eventHandlers={{
 				click: () => onClickFeature && onClickFeature(feature),
 			}}
-			key={feature.id}
 		>
 			{/* {getTooltip && (
 				<Tooltip direction="bottom" sticky>
