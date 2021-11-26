@@ -1,21 +1,79 @@
-export type Feature = { id: string; [k: string]: any } // TODO
+import { Pool } from 'pg'
+import { v4 as randomUUID } from 'uuid'
+
+export type Feature = { id: string; geometry: Geometry; extra?: any }
+
+export type Geometry = any
 
 export class MapDB {
-	features: Record<string, Feature> = {
-		TODO: { id: 'TODO', geometry: { x: 0, z: 0 } }, // TODO demo
+	private pool: Pool
+	private readyP: Promise<void>
+
+	private featuresById: Record<string, Feature> = {
+		DEMO: { id: 'DEMO', geometry: { x: 0, z: 0 }, extra: { name: 'DEMO' } }, // TODO remove demo
 	}
 
-	constructor() {
-		// TODO load all from db
+	constructor(connectionString: string) {
+		this.pool = new Pool({ connectionString })
+
+		// pool will emit error on behalf of idle clients (backend error, network partition)
+		this.pool.on('error', (err) => {
+			console.error('Unexpected error on idle client', err)
+			process.exit(-1)
+		})
+
+		this.readyP = Promise.all([
+			this.pool.query(`CREATE TABLE IF NOT EXISTS
+				features (
+					id TEXT NOT NULL,
+					geometry_str TEXT,
+					extra_str TEXT
+				);`),
+		]).then(async () => {
+			const { rows } = await this.pool.query('SELECT * FROM features;')
+			for (const { id, geometry_str, extra_str } of rows) {
+				const geometry = JSON.parse(geometry_str)
+				const extra = JSON.parse(extra_str)
+				this.featuresById[id] = { id, geometry, extra }
+			}
+		})
+	}
+
+	close() {
+		this.pool.end()
 	}
 
 	async getAllFeatures(): Promise<Feature[]> {
-		return Object.values(this.features)
+		await this.readyP
+		return Object.values(this.featuresById)
 	}
 
 	async updateFeature(feature: Feature): Promise<Feature> {
-		// TODO update db
-		this.features[feature.id] = feature
+		await this.readyP
+		let { id, geometry, extra } = feature
+		if (!id) id = feature.id = randomUUID()
+		const geometry_str = geometry && JSON.stringify(geometry)
+		const extra_str = extra && JSON.stringify(extra)
+
+		if (this.featuresById[id]) {
+			await this.pool.query(
+				'UPDATE features WHERE id = $1 SET geometry_str=$2, extra_str=$3;',
+				[id, geometry_str, extra_str]
+			)
+		} else {
+			await this.pool.query(
+				'INSERT INTO features (id, geometry_str, extra_str) VALUES ($1, $2, $3);',
+				[id, geometry_str, extra_str]
+			)
+		}
+
+		this.featuresById[id] = feature
 		return feature
+	}
+
+	async deleteFeature(feature: { id: string }): Promise<void> {
+		await this.readyP
+		await this.pool.query('DELETE FROM features WHERE id = $1;', [feature.id])
+		delete this.featuresById[feature.id]
 	}
 }
