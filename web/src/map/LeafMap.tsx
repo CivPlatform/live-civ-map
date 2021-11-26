@@ -1,6 +1,6 @@
 import * as L from 'leaflet'
-import { ReactElement, useCallback, useRef } from 'react'
-import { MapContainer, TileLayer } from 'react-leaflet'
+import { ReactElement, useRef } from 'react'
+import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet'
 import './LeafMap.css'
 import { deepFlip, XZ } from './spatial'
 
@@ -17,7 +17,6 @@ export type LeafMapProps = {
 	zoom?: number
 	width?: number
 	height: number | string
-	onViewChange?: () => void
 	tilesRoot?: string
 	tileSize?: number
 	basemapId?: string
@@ -34,8 +33,6 @@ export function LeafMap(props: LeafMapProps) {
 		width,
 		height,
 
-		onViewChange,
-
 		tilesRoot = 'https://ccmap.github.io/tiles/',
 		tileSize = 256,
 		basemapId = 'terrain',
@@ -50,15 +47,6 @@ export function LeafMap(props: LeafMapProps) {
 		zoom = -6
 	}
 
-	const coordsRef = useRef<HTMLDivElement>(null)
-
-	const onMouseMove = useCallback((e) => {
-		console.log(e)
-		if (!coordsRef.current) return
-		const { lat: z, lng: x } = e.latlng
-		coordsRef.current.innerText = `X ${Math.floor(x)} ${Math.floor(z)} Z`
-	}, [])
-
 	return (
 		<MapContainer
 			className="LeafMap"
@@ -71,10 +59,7 @@ export function LeafMap(props: LeafMapProps) {
 			minZoom={-6}
 			zoomSnap={0}
 			attributionControl={false}
-			zoomControl
-			onmoveend={onViewChange}
-			onzoomend={onViewChange}
-			onmousemove={onMouseMove}
+			zoomControl={false}
 		>
 			<TileLayer
 				noWrap
@@ -86,14 +71,33 @@ export function LeafMap(props: LeafMapProps) {
 				opacity={basemapOpacity}
 			/>
 			{children}
-			<div className="LeafMap-coords" ref={coordsRef}>
-				X 0 0 Z
-			</div>
+			<MapCoords />
 		</MapContainer>
 	)
 }
 
 export default LeafMap
+
+function MapCoords() {
+	const coordsRef = useRef<HTMLDivElement>(null)
+
+	const updateCoords = (e: L.LeafletMouseEvent) => {
+		if (!coordsRef.current) return
+		const { lat: z, lng: x } = e.latlng
+		coordsRef.current.innerText = `X ${Math.floor(x)} ${Math.floor(z)} Z`
+	}
+
+	useMapEvents({
+		click: updateCoords,
+		mousemove: updateCoords,
+	})
+
+	return (
+		<div className="LeafMap-coords" ref={coordsRef}>
+			Click to show coords
+		</div>
+	)
+}
 
 const transparentPixelURI =
 	'data:image/gifbase64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
