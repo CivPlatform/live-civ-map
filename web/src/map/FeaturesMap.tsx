@@ -1,9 +1,10 @@
-import { Marker } from 'react-leaflet'
+import { useRef, useState } from 'react'
+import { Marker, Tooltip, useMapEvents } from 'react-leaflet'
 import { MapWSClient, useMapWs } from '../MapWS'
 import { Feature, MarkerGeometry } from './Feature'
 import { Layer } from './Layer'
 import LeafMap, { LeafMapProps } from './LeafMap'
-import { XZ } from './spatial'
+import { deepFlip, XZ } from './spatial'
 
 export interface MapControls {
 	onClickFeature?: (f: Feature) => any
@@ -18,14 +19,35 @@ export function FeaturesMap(
 ) {
 	let { layers, controls, ...mapProps } = props
 
-	// TODO onClickMap
-
 	return (
 		<LeafMap {...mapProps}>
 			{layers.map((l) => (
 				<CivLayer layer={l} controls={controls} key={l.url} />
 			))}
+			<MarkerAtClick controls={controls} />
 		</LeafMap>
+	)
+}
+
+function MarkerAtClick(props: { controls: MapControls }) {
+	const [markerPos, setMarkerPos] = useState<XZ | null>(null)
+
+	useMapEvents({
+		click: (e) => {
+			console.log(e)
+			const { lat: z, lng: x } = e.latlng
+			props.controls.onClickMap?.([x, z])
+			setMarkerPos([x, z])
+		},
+	})
+
+	if (!markerPos) return null
+	return (
+		<Marker position={deepFlip(markerPos)}>
+			<Tooltip direction="bottom" sticky>
+				X {markerPos?.[0]} {markerPos?.[1]} Z
+			</Tooltip>
+		</Marker>
 	)
 }
 

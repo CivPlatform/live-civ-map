@@ -1,5 +1,5 @@
 import * as L from 'leaflet'
-import { ReactElement, useRef } from 'react'
+import { useRef } from 'react'
 import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet'
 import './LeafMap.css'
 import { deepFlip, XZ } from './spatial'
@@ -22,7 +22,7 @@ export type LeafMapProps = {
 	basemapId?: string
 	basemapOpacity?: number
 	backgroundColor?: string
-	children?: ReactElement | ReactElement[]
+	children?: React.ReactNode
 }
 
 export function LeafMap(props: LeafMapProps) {
