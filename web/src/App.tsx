@@ -7,9 +7,10 @@ import {
 import FeaturesMap from './map/FeaturesMap'
 
 function App() {
+	const layers = [{ url: 'ws://localhost:5000/' }]
 	return (
 		<div className="App">
-			<FeaturesMap height="100vh" />
+			<FeaturesMap layers={layers} height="100vh" />
 			<div className="App-Menu" style={{ zIndex: 1000 }}>
 				<div>
 					<img src="" alt="Logo" />

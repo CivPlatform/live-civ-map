@@ -1,4 +1,3 @@
-import { selector } from 'recoil'
 // import { Bounds, XZ } from './spatial'
 
 export type FeatureGeometry = { x: number; z: number }
@@ -14,10 +13,3 @@ export interface Feature {
 	id: string
 	geometry: FeatureGeometry
 }
-
-export const featuresState = selector<Feature[]>({
-	key: 'features',
-	get: async ({ get }) => {
-		return [{ id: 'TODO', geometry: { x: 0, z: 0 } }]
-	},
-})
