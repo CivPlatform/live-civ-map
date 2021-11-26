@@ -1,4 +1,4 @@
-import { Pool } from 'pg'
+import PG from 'pg'
 import { v4 as randomUUID } from 'uuid'
 
 export type Feature = { id: string; geometry: Geometry; extra?: any }
@@ -6,15 +6,13 @@ export type Feature = { id: string; geometry: Geometry; extra?: any }
 export type Geometry = any
 
 export class MapDB {
-	private pool: Pool
+	private pool: PG.Pool
 	private readyP: Promise<void>
 
-	private featuresById: Record<string, Feature> = {
-		DEMO: { id: 'DEMO', geometry: { x: 0, z: 0 }, extra: { name: 'DEMO' } }, // TODO remove demo
-	}
+	private featuresById: Record<string, Feature> = {}
 
 	constructor(connectionString: string) {
-		this.pool = new Pool({ connectionString })
+		this.pool = new PG.Pool({ connectionString })
 
 		// pool will emit error on behalf of idle clients (backend error, network partition)
 		this.pool.on('error', (err) => {
@@ -57,7 +55,7 @@ export class MapDB {
 
 		if (this.featuresById[id]) {
 			await this.pool.query(
-				'UPDATE features WHERE id = $1 SET geometry_str=$2, extra_str=$3;',
+				'UPDATE features SET geometry_str=$2, extra_str=$3 WHERE id = $1;',
 				[id, geometry_str, extra_str]
 			)
 		} else {
