@@ -64,7 +64,7 @@ function CivMarker(props: {
 	const { onClickFeature } = controls
 	return (
 		<Marker
-			position={[feature.geometry.z, feature.geometry.x]}
+			position={[feature.z, feature.x]}
 			eventHandlers={{
 				click: () => onClickFeature && onClickFeature(feature),
 			}}

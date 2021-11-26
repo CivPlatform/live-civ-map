@@ -1,7 +1,7 @@
 import PG from 'pg'
 import { v4 as randomUUID } from 'uuid'
 
-export type Feature = { id: string; geometry: Geometry; extra?: any }
+export type Feature = { id: string; [k: string]: any }
 
 export type Geometry = any
 
@@ -24,15 +24,13 @@ export class MapDB {
 			this.pool.query(`CREATE TABLE IF NOT EXISTS
 				features (
 					id TEXT NOT NULL,
-					geometry_str TEXT,
-					extra_str TEXT
+					data_str TEXT
 				);`),
 		]).then(async () => {
 			const { rows } = await this.pool.query('SELECT * FROM features;')
-			for (const { id, geometry_str, extra_str } of rows) {
-				const geometry = JSON.parse(geometry_str)
-				const extra = JSON.parse(extra_str)
-				this.featuresById[id] = { id, geometry, extra }
+			for (const { id, data_str } of rows) {
+				const data = JSON.parse(data_str)
+				this.featuresById[id] = { id, ...data }
 			}
 		})
 	}
@@ -48,20 +46,19 @@ export class MapDB {
 
 	async updateFeature(feature: Feature): Promise<Feature> {
 		await this.readyP
-		let { id, geometry, extra } = feature
+		let { id, ...data } = feature
 		if (!id) id = feature.id = randomUUID()
-		const geometry_str = geometry && JSON.stringify(geometry)
-		const extra_str = extra && JSON.stringify(extra)
+		const data_str = JSON.stringify(data)
 
 		if (this.featuresById[id]) {
-			await this.pool.query(
-				'UPDATE features SET geometry_str=$2, extra_str=$3 WHERE id = $1;',
-				[id, geometry_str, extra_str]
-			)
+			await this.pool.query('UPDATE features SET data_str=$2 WHERE id = $1;', [
+				id,
+				data_str,
+			])
 		} else {
 			await this.pool.query(
-				'INSERT INTO features (id, geometry_str, extra_str) VALUES ($1, $2, $3);',
-				[id, geometry_str, extra_str]
+				'INSERT INTO features (id, data_str) VALUES ($1, $2);',
+				[id, data_str]
 			)
 		}
 

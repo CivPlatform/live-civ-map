@@ -1,11 +1,10 @@
 import { Bounds, XZ } from './spatial'
 
-export interface Feature<G extends FeatureGeometry = FeatureGeometry> {
+export type Feature<Geom extends FeatureGeometry = FeatureGeometry> = {
 	/** should never be exposed to user */
 	id: string
-	geometry: G
-	extra?: any
-}
+	[k: string]: any
+} & Geom
 
 export type FeatureGeometry =
 	| MarkerGeometry
