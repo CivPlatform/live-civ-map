@@ -1,5 +1,5 @@
 import { Marker } from 'react-leaflet'
-import { useMapWs } from '../MapWS'
+import { MapWSClient, useMapWs } from '../MapWS'
 import { Feature, MarkerGeometry } from './Feature'
 import { Layer } from './Layer'
 import LeafMap, { LeafMapProps } from './LeafMap'
@@ -32,9 +32,11 @@ export function FeaturesMap(
 function CivLayer(props: { layer: Layer; controls: MapControls }) {
 	const { layer, controls } = props
 
-	const mws = useMapWs(layer.url)
+	const layerControl = useMapWs(layer.url)
 
-	const features = mws?.getAllFeatures() || []
+	if (!layerControl) return null
+
+	const features = layerControl.getAllFeatures()
 
 	return (
 		<>
@@ -44,6 +46,7 @@ function CivLayer(props: { layer: Layer; controls: MapControls }) {
 					<CivMarker
 						feature={feature as Feature<MarkerGeometry>}
 						controls={controls}
+						layerControl={layerControl}
 						key={feature.id}
 					/>
 				)
@@ -55,6 +58,7 @@ function CivLayer(props: { layer: Layer; controls: MapControls }) {
 function CivMarker(props: {
 	feature: Feature<MarkerGeometry>
 	controls: MapControls
+	layerControl: MapWSClient
 }) {
 	const { feature, controls } = props
 	const { onClickFeature } = controls
