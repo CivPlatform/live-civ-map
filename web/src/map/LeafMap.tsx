@@ -1,11 +1,12 @@
 import * as L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { useRef } from 'react'
 import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet'
 import './LeafMap.css'
 import { deepFlip, XZ } from './spatial'
 
 L.Icon.Default.imagePath =
-	'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.1.0/images/'
+	'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/'
 
 var mcCRS = L.extend({}, L.CRS.Simple, {
 	transformation: new L.Transformation(1, 0, 1, 0),
