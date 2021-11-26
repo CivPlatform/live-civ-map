@@ -69,6 +69,7 @@ export function LeafMap(props: LeafMapProps) {
 			zoom={zoom}
 			maxZoom={5}
 			minZoom={-6}
+			zoomSnap={0}
 			attributionControl={false}
 			zoomControl
 			onmoveend={onViewChange}
