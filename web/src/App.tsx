@@ -1,61 +1,44 @@
-import useLocalStorage from '@rehooks/local-storage'
-import { useState } from 'react'
+import { useSetRecoilState } from 'recoil'
 import './App.css'
 import { DiscordUserIcon as DiscordUserMenu } from './LoginMenu'
+import { createdFeatureTypeRecoil } from './map/EditorCreator'
 import { FeaturesMap } from './map/FeaturesMap'
-import { Layer } from './map/Layer'
 
-function App() {
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	let [layers, setLayers] = useLocalStorage<Layer[]>('LiveCivMap:layers')
-	if (!layers) layers = [{ url: 'ws://localhost:5000/' }]
-
-	const [createdFeatureType, setCreatedFeatureType] = useState<string | null>(
-		null
-	)
-
+export function App() {
 	return (
 		<div className="App">
-			<FeaturesMap
-				layers={layers}
-				controls={{}}
-				createdFeatureType={createdFeatureType}
-				setCreatedFeatureType={setCreatedFeatureType}
-				height="100vh"
-			></FeaturesMap>
-			<Menu setCreatedFeatureType={setCreatedFeatureType} />
+			<FeaturesMap height="100vh" />
+			<Menu />
 		</div>
 	)
 }
 
-export default App
+function Menu() {
+	const setCreatedFeatureType = useSetRecoilState(createdFeatureTypeRecoil)
 
-function Menu(props: {
-	setCreatedFeatureType: (state: string | null) => void
-}) {
 	return (
 		<div className="App-Menu" style={{ zIndex: 1000 }}>
 			<div>
 				<span style={{ textAlign: 'center' }}>{':)'}</span>
 				<span>Menu</span>
 			</div>
-			<div onClick={() => props.setCreatedFeatureType('marker')}>
+			<div onClick={() => setCreatedFeatureType('marker')}>
 				<span style={{ textAlign: 'center' }}>+</span>
 				<span>Create Marker</span>
 			</div>
-			<div onClick={() => props.setCreatedFeatureType('line')}>
+			<div onClick={() => setCreatedFeatureType('line')}>
 				<span style={{ textAlign: 'center' }}>+</span>
 				<span>Create Line</span>
 			</div>
-			<div onClick={() => props.setCreatedFeatureType('polygon')}>
+			<div onClick={() => setCreatedFeatureType('polygon')}>
 				<span style={{ textAlign: 'center' }}>+</span>
 				<span>Create Polygon</span>
 			</div>
-			<div onClick={() => props.setCreatedFeatureType('rectangle')}>
+			<div onClick={() => setCreatedFeatureType('rectangle')}>
 				<span style={{ textAlign: 'center' }}>+</span>
 				<span>Create Rectangle</span>
 			</div>
-			<div onClick={() => props.setCreatedFeatureType('map_image')}>
+			<div onClick={() => setCreatedFeatureType('map_image')}>
 				<span style={{ textAlign: 'center' }}>+</span>
 				<span>Overlay Image on Map</span>
 			</div>

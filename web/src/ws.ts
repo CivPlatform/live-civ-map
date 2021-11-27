@@ -13,10 +13,12 @@ export class WSClient<WSServerMessage, WSClientMessage> {
 
 	constructor(args: {
 		url: string
+		token?: string
 		onMessage: (msg: WSServerMessage) => any
 		onStatus?: (status: WsStatus) => any
 	}) {
 		this.url = args.url
+		this.token = args.token
 		this.onMessage = args.onMessage
 		this.onStatus = args.onStatus
 

@@ -1,86 +1,55 @@
-import { useState } from 'react'
-import { Marker, Popup, Tooltip, useMapEvents } from 'react-leaflet'
-import { MapWSClient, useMapWs } from '../MapWS'
+import { LeafletEvent } from 'leaflet'
+import { useCallback } from 'react'
+import { Marker, Polygon, Polyline, Popup, Rectangle } from 'react-leaflet'
 import { EditorCreator } from './EditorCreator'
-import { Feature, MarkerGeometry } from './Feature'
-import { Layer } from './Layer'
+import {
+	Feature,
+	LinesGeometry,
+	MarkerGeometry,
+	PolygonsGeometry,
+	RectBoundsGeometry,
+	RectCenterGeometry,
+} from './Feature'
+import { Layer, useLayers } from './Layer'
+import { useLayerState, useUpdateFeature } from './LayerState'
 import LeafMap, { LeafMapProps } from './LeafMap'
-import { deepFlip, XZ } from './spatial'
+import { Bounds, deepFlip, xzFromLatLng } from './spatial'
 
-export interface MapControls {
-	onClickFeature?: (f: Feature) => any
-	onClickMap?: (pos: XZ) => any
-}
+export function FeaturesMap(props: LeafMapProps) {
+	const [layers] = useLayers()
 
-export function FeaturesMap(
-	props: {
-		layers: Layer[]
-		controls: MapControls
-		createdFeatureType: string | null
-		setCreatedFeatureType: (state: string | null) => void
-	} & LeafMapProps
-) {
-	const {
-		layers,
-		controls,
-		createdFeatureType,
-		setCreatedFeatureType,
-		...mapProps
-	} = props
+	const editorLayer = layers[0] // XXX
 
 	return (
-		<LeafMap {...mapProps}>
+		<LeafMap {...props}>
 			{layers.map((l) => (
-				<EditableLayer layer={l} controls={controls} key={l.url} />
+				<EditableLayer layer={l} key={l.url} />
 			))}
-			<EditorCreator
-				createdFeatureType={createdFeatureType}
-				setCreatedFeatureType={setCreatedFeatureType}
-			/>
+			<EditorCreator layer={editorLayer} />
 			{props.children}
 		</LeafMap>
 	)
 }
 
-export function MarkerAtClick(props: { controls: MapControls }) {
-	const [markerPos, setMarkerPos] = useState<XZ | null>(null)
+export function EditableLayer(props: { layer: Layer }) {
+	const { layer } = props
 
-	useMapEvents({
-		click: (e) => {
-			const { lat: z, lng: x } = e.latlng
-			props.controls.onClickMap?.([x, z])
-			setMarkerPos([x, z])
-		},
-	})
+	const [layerState] = useLayerState(layer.url)
 
-	if (!markerPos) return null
-	return (
-		<Marker position={deepFlip(markerPos)}>
-			<Tooltip direction="bottom" sticky>
-				X {markerPos?.[0]} {markerPos?.[1]} Z
-			</Tooltip>
-		</Marker>
-	)
-}
+	const updateFeature = useUpdateFeature(layer.url)
 
-export function EditableLayer(props: { layer: Layer; controls: MapControls }) {
-	const { layer, controls } = props
-
-	const layerControl = useMapWs(layer.url)
-
-	if (!layerControl) return null
-
-	const features = layerControl.getAllFeatures()
+	// TODO perf: use recoil selector
+	const features = Object.values(layerState.featuresById)
 
 	return (
 		<>
 			{features.map((feature) => {
-				// TODO select component by geometry
+				const EditableFeature = getFeatureComponent(feature)
+				if (!EditableFeature) return null
 				return (
-					<EditableMarker
-						feature={feature as Feature<MarkerGeometry>}
-						controls={controls}
-						layerControl={layerControl}
+					<EditableFeature
+						feature={feature as any} // TODO
+						updateFeature={updateFeature}
 						key={feature.id}
 					/>
 				)
@@ -89,13 +58,25 @@ export function EditableLayer(props: { layer: Layer; controls: MapControls }) {
 	)
 }
 
+function getFeatureComponent(feature: Feature) {
+	// order matters: first matching determines display mode
+	// if ('map_image' in feature) return EditableImage
+	if ('polygons' in feature) return EditablePolygon
+	if ('lines' in feature) return EditableLines
+	if ('rectangle' in feature) return EditableRectangleBounds
+	if ('x' in feature && 'z' in feature) {
+		if ('rect_size' in feature) return EditableRectangleCenter
+		// if ('radius' in feature) return EditableCircle
+		return EditableMarker
+	}
+	return null
+}
+
 export function EditableMarker(props: {
 	feature: Feature<MarkerGeometry>
-	controls: MapControls
-	layerControl: MapWSClient
+	updateFeature?: (f: Feature) => void
 }) {
-	const { feature, controls, layerControl } = props
-	const { onClickFeature } = controls
+	const { feature, updateFeature } = props
 	const { x, z } = feature
 
 	if (!isFinite(x) || !isFinite(z)) {
@@ -104,17 +85,177 @@ export function EditableMarker(props: {
 
 	return (
 		<Marker
+			draggable={!!updateFeature}
 			position={[z, x]}
 			eventHandlers={{
-				click: () => onClickFeature && onClickFeature(feature),
-				'editable:drawing:commit': (e) => {
+				dragend: (e) => {
 					const { lat: z, lng: x } = e.target.getLatLng()
-					console.log('x z', x, z)
-					layerControl.updateFeature({ ...feature, x, z })
+					updateFeature?.({ ...feature, x, z })
 				},
 			}}
 		>
 			{<Popup>hi</Popup>}
 		</Marker>
+	)
+}
+
+export function EditableLines(props: {
+	feature: Feature<LinesGeometry>
+	updateFeature?: (f: Feature) => void
+}) {
+	const { feature, updateFeature } = props
+	const { lines } = feature
+
+	const editHandler = useCallback(
+		(e: LeafletEvent) => {
+			const lines = xzFromLatLng(e.target.getLatLngs()) as any // XXX normalize nesting depth
+			updateFeature?.({ ...feature, lines })
+		},
+		[feature, updateFeature]
+	)
+
+	// TODO better validation
+	if (!lines) {
+		return null
+	}
+
+	return (
+		<Polyline
+			positions={deepFlip(lines)}
+			ref={(r) => setEditable(r, updateFeature)}
+			eventHandlers={{
+				'editable:drawing:clicked': editHandler,
+				'editable:vertex:dragend': editHandler,
+				'editable:vertex:deleted': editHandler,
+			}}
+		>
+			{<Popup>hi</Popup>}
+		</Polyline>
+	)
+}
+
+export function EditablePolygon(props: {
+	feature: Feature<PolygonsGeometry>
+	updateFeature?: (f: Feature) => void
+}) {
+	const { feature, updateFeature } = props
+	const { polygons } = feature
+
+	const editHandler = useCallback(
+		(e: LeafletEvent) => {
+			const polygons = xzFromLatLng(e.target.getLatLngs()) as any // XXX normalize nesting depth
+			updateFeature?.({ ...feature, polygons })
+		},
+		[feature, updateFeature]
+	)
+
+	// TODO better validation
+	if (!polygons) {
+		return null
+	}
+
+	return (
+		<Polygon
+			positions={deepFlip(polygons)}
+			ref={(r) => setEditable(r, updateFeature)}
+			eventHandlers={{
+				'editable:drawing:clicked': editHandler,
+				'editable:vertex:dragend': editHandler,
+				'editable:vertex:deleted': editHandler,
+			}}
+		>
+			{<Popup>hi</Popup>}
+		</Polygon>
+	)
+}
+
+export function EditableRectangleBounds(props: {
+	feature: Feature<RectBoundsGeometry>
+	updateFeature?: (f: Feature) => void
+}) {
+	const { feature, updateFeature } = props
+	const { rectangle } = feature
+
+	const editHandler = useCallback(
+		(e: LeafletEvent) => {
+			const llbounds = e.target.getBounds()
+			const rectangle: Bounds = [
+				[llbounds.getWest(), llbounds.getSouth()],
+				[llbounds.getEast(), llbounds.getNorth()],
+			]
+			updateFeature?.({ ...feature, rectangle })
+		},
+		[feature, updateFeature]
+	)
+
+	// TODO better validation
+	if (!rectangle) {
+		return null
+	}
+
+	return (
+		<Rectangle
+			bounds={deepFlip(rectangle)}
+			ref={(r) => setEditable(r, updateFeature)}
+			eventHandlers={{
+				'editable:vertex:dragend': editHandler,
+			}}
+		>
+			{<Popup>hi</Popup>}
+		</Rectangle>
+	)
+}
+
+export function EditableRectangleCenter(props: {
+	feature: Feature<RectCenterGeometry>
+	updateFeature?: (f: Feature) => void
+}) {
+	const { feature, updateFeature } = props
+	const { x, z, rect_size } = feature
+
+	const editHandler = useCallback(
+		(e: LeafletEvent) => {
+			const llbounds = e.target.getBounds()
+			const x = (llbounds.getWest() + llbounds.getEast()) / 2
+			const z = (llbounds.getNorth() + llbounds.getSouth()) / 2
+			const dx = Math.abs(llbounds.getWest() - llbounds.getEast())
+			const dz = Math.abs(llbounds.getNorth() - llbounds.getSouth())
+			const rect_size = Math.min(dx, dz)
+			updateFeature?.({ ...feature, x, z, rect_size })
+		},
+		[feature, updateFeature]
+	)
+
+	if (!isFinite(x) || !isFinite(z) || !isFinite(rect_size)) {
+		return null
+	}
+
+	return (
+		<Rectangle
+			bounds={deepFlip([
+				[x - rect_size, z - rect_size],
+				[x + rect_size, z + rect_size],
+			])}
+			ref={(r) => setEditable(r, updateFeature)}
+			eventHandlers={{
+				'editable:vertex:dragend': editHandler,
+			}}
+		>
+			{<Popup>hi</Popup>}
+		</Rectangle>
+	)
+}
+
+function setEditable(r: any, enabled: any) {
+	if (!r) return
+	setImmediate(() =>
+		setImmediate(() => {
+			if (enabled) {
+				r.enableEdit()
+				r.editor.reset()
+			} else {
+				r.disableEdit()
+			}
+		})
 	)
 }
