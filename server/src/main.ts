@@ -5,7 +5,7 @@ const { DATABASE_URL = '' } = process.env
 if (!DATABASE_URL) throw new Error(`Missing DATABASE_URL`)
 
 class Main {
-	mapDb = new MapDB(DATABASE_URL)
+	mapDb = new MapDB(DATABASE_URL + '?sslmode=require')
 	wsServer = new WSServer(this)
 
 	async handleClientConnected(session: WSSession) {
