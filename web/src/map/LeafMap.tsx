@@ -1,4 +1,5 @@
 import * as L from 'leaflet'
+import 'leaflet-editable'
 import 'leaflet/dist/leaflet.css'
 import { useRef } from 'react'
 import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet'
@@ -61,6 +62,7 @@ export function LeafMap(props: LeafMapProps) {
 			zoomSnap={0}
 			attributionControl={false}
 			zoomControl={false}
+			editable={true}
 		>
 			<TileLayer
 				noWrap

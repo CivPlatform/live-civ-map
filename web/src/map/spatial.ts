@@ -3,8 +3,22 @@ export type Bounds = [XZ, XZ]
 
 type LatLngObj = { lat: number; lng: number }
 
-/** Leaflet expects `[z,x]` but Minecraft convention is `[x,z]` */
-export function deepFlip<T extends XZ | XZ[] | XZ[][]>(positions: T): T {
+type Nested<T> = T | Nested<T>[]
+type ReplaceNested<T, U> = T extends Array<infer X> ? ReplaceNested<X, U>[] : U
+
+export function xzFromLatLng<T extends Nested<LatLngObj>>(
+	o: T
+): ReplaceNested<T, XZ> {
+	if (Array.isArray(o)) {
+		return o.map((e) => xzFromLatLng(e)) as any
+	}
+	const { lat: z, lng: x } = o as LatLngObj
+	return [x, z] as any
+}
+
+/** Leaflet expects `[z,x]` but Minecraft convention is `[x,z]`.
+ * Preserves nesting depth. */
+export function deepFlip<T extends Nested<XZ>>(positions: T): T {
 	if (Array.isArray(positions[0]))
 		return (positions as any).map((e: any) => deepFlip(e))
 	return [positions[1], positions[0]] as any
