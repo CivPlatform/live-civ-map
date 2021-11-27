@@ -1,6 +1,6 @@
 import { LeafletEvent } from 'leaflet'
 import { useCallback } from 'react'
-import { Marker, Polygon, Polyline, Popup, Rectangle } from 'react-leaflet'
+import { Marker, Polygon, Polyline, Rectangle } from 'react-leaflet'
 import { EditorCreator } from './EditorCreator'
 import {
 	Feature,
@@ -93,9 +93,7 @@ export function EditableMarker(props: {
 					updateFeature?.({ ...feature, x, z })
 				},
 			}}
-		>
-			{<Popup>hi</Popup>}
-		</Marker>
+		></Marker>
 	)
 }
 
@@ -128,9 +126,7 @@ export function EditableLines(props: {
 				'editable:vertex:dragend': editHandler,
 				'editable:vertex:deleted': editHandler,
 			}}
-		>
-			{<Popup>hi</Popup>}
-		</Polyline>
+		></Polyline>
 	)
 }
 
@@ -163,9 +159,7 @@ export function EditablePolygon(props: {
 				'editable:vertex:dragend': editHandler,
 				'editable:vertex:deleted': editHandler,
 			}}
-		>
-			{<Popup>hi</Popup>}
-		</Polygon>
+		></Polygon>
 	)
 }
 
@@ -200,9 +194,7 @@ export function EditableRectangleBounds(props: {
 			eventHandlers={{
 				'editable:vertex:dragend': editHandler,
 			}}
-		>
-			{<Popup>hi</Popup>}
-		</Rectangle>
+		></Rectangle>
 	)
 }
 
@@ -240,9 +232,7 @@ export function EditableRectangleCenter(props: {
 			eventHandlers={{
 				'editable:vertex:dragend': editHandler,
 			}}
-		>
-			{<Popup>hi</Popup>}
-		</Rectangle>
+		></Rectangle>
 	)
 }
 
