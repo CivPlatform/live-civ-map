@@ -12,7 +12,10 @@ export class MapDB {
 	private featuresById: Record<string, Feature> = {}
 
 	constructor(connectionString: string) {
-		this.pool = new PG.Pool({ connectionString })
+		this.pool = new PG.Pool({
+			connectionString,
+			ssl: { rejectUnauthorized: false }, // heroku fix
+		})
 
 		// pool will emit error on behalf of idle clients (backend error, network partition)
 		this.pool.on('error', (err) => {
