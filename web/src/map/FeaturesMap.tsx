@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
-import { Marker, Tooltip, useMapEvents } from 'react-leaflet'
+import { useState } from 'react'
+import { Marker, Popup, Tooltip, useMapEvents } from 'react-leaflet'
 import { MapWSClient, useMapWs } from '../MapWS'
+import { EditorCreator } from './EditorCreator'
 import { Feature, MarkerGeometry } from './Feature'
 import { Layer } from './Layer'
 import LeafMap, { LeafMapProps } from './LeafMap'
@@ -15,26 +16,37 @@ export function FeaturesMap(
 	props: {
 		layers: Layer[]
 		controls: MapControls
+		createdFeatureType: string | null
+		setCreatedFeatureType: (state: string | null) => void
 	} & LeafMapProps
 ) {
-	let { layers, controls, ...mapProps } = props
+	const {
+		layers,
+		controls,
+		createdFeatureType,
+		setCreatedFeatureType,
+		...mapProps
+	} = props
 
 	return (
 		<LeafMap {...mapProps}>
 			{layers.map((l) => (
-				<CivLayer layer={l} controls={controls} key={l.url} />
+				<EditableLayer layer={l} controls={controls} key={l.url} />
 			))}
-			<MarkerAtClick controls={controls} />
+			<EditorCreator
+				createdFeatureType={createdFeatureType}
+				setCreatedFeatureType={setCreatedFeatureType}
+			/>
+			{props.children}
 		</LeafMap>
 	)
 }
 
-function MarkerAtClick(props: { controls: MapControls }) {
+export function MarkerAtClick(props: { controls: MapControls }) {
 	const [markerPos, setMarkerPos] = useState<XZ | null>(null)
 
 	useMapEvents({
 		click: (e) => {
-			console.log(e)
 			const { lat: z, lng: x } = e.latlng
 			props.controls.onClickMap?.([x, z])
 			setMarkerPos([x, z])
@@ -51,7 +63,7 @@ function MarkerAtClick(props: { controls: MapControls }) {
 	)
 }
 
-function CivLayer(props: { layer: Layer; controls: MapControls }) {
+export function EditableLayer(props: { layer: Layer; controls: MapControls }) {
 	const { layer, controls } = props
 
 	const layerControl = useMapWs(layer.url)
@@ -65,7 +77,7 @@ function CivLayer(props: { layer: Layer; controls: MapControls }) {
 			{features.map((feature) => {
 				// TODO select component by geometry
 				return (
-					<CivMarker
+					<EditableMarker
 						feature={feature as Feature<MarkerGeometry>}
 						controls={controls}
 						layerControl={layerControl}
@@ -77,25 +89,32 @@ function CivLayer(props: { layer: Layer; controls: MapControls }) {
 	)
 }
 
-function CivMarker(props: {
+export function EditableMarker(props: {
 	feature: Feature<MarkerGeometry>
 	controls: MapControls
 	layerControl: MapWSClient
 }) {
-	const { feature, controls } = props
+	const { feature, controls, layerControl } = props
 	const { onClickFeature } = controls
+	const { x, z } = feature
+
+	if (!isFinite(x) || !isFinite(z)) {
+		return null
+	}
+
 	return (
 		<Marker
-			position={[feature.z, feature.x]}
+			position={[z, x]}
 			eventHandlers={{
 				click: () => onClickFeature && onClickFeature(feature),
+				'editable:drawing:commit': (e) => {
+					const { lat: z, lng: x } = e.target.getLatLng()
+					console.log('x z', x, z)
+					layerControl.updateFeature({ ...feature, x, z })
+				},
 			}}
 		>
-			{/* {getTooltip && (
-				<Tooltip direction="bottom" sticky>
-					{getTooltip(feature)}
-				</Tooltip>
-			)} */}
+			{<Popup>hi</Popup>}
 		</Marker>
 	)
 }
