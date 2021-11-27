@@ -1,5 +1,5 @@
 import useLocalStorage from '@rehooks/local-storage'
-import { useEffect, useState } from 'react'
+import useSWRImmutable from 'swr/immutable'
 
 // react-js only exposes env starting with REACT_APP_ https://create-react-app.dev/docs/adding-custom-environment-variables/
 const DISCORD_APP_ID = process.env.REACT_APP_DISCORD_APP_ID
@@ -20,13 +20,10 @@ export function useDiscordToken() {
 
 export function useDiscordProfile() {
 	const token = useDiscordToken()
-	const [profile, setProfile] = useState<DiscordUser | null>()
-	useEffect(() => {
-		token &&
-			fetchDiscordUserProfile(token)
-				.then((profile) => setProfile(profile))
-				.catch(console.error)
-	}, [token])
+	const { data: profile } = useSWRImmutable(
+		token || null,
+		fetchDiscordUserProfile
+	)
 	return profile
 }
 
@@ -146,7 +143,7 @@ export function checkUrlParamsLogin() {
 }
 
 export async function fetchDiscordUserProfile(
-	token: string
+	token: string | null | undefined
 ): Promise<DiscordUser | null> {
 	try {
 		if (!token) return null
