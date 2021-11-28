@@ -12,6 +12,7 @@ import { EditorCreator } from './EditorCreator'
 import {
 	CircleGeometry,
 	Feature,
+	FeatureGeometry,
 	LinesGeometry,
 	MapImageGeometry,
 	MarkerGeometry,
@@ -53,12 +54,11 @@ export function EditableLayer(props: { layer: Layer }) {
 	return (
 		<>
 			{features.map((feature) => {
-				const EditableFeature = getFeatureComponent(feature)
-				if (!EditableFeature) return null
+				const geometry = feature.data as FeatureGeometry // TODO
 				return (
 					<EditableFeature
 						featureId={feature.id}
-						geometry={feature.data as any} // TODO
+						geometry={geometry}
 						updateFeature={updateFeature}
 						key={feature.id}
 					/>
@@ -68,27 +68,32 @@ export function EditableLayer(props: { layer: Layer }) {
 	)
 }
 
-function getFeatureComponent(feature: Feature) {
-	const geometry = feature.data
+interface EditableFeatureProps<G extends FeatureGeometry> {
+	featureId: Feature['id']
+	geometry: G
+	updateFeature?: (f: FeatureUpdateDTO) => void
+	children?: React.ReactNode
+}
+
+function EditableFeature(props: EditableFeatureProps<FeatureGeometry>) {
+	const { geometry: geom } = props
 	// order matters: first matching determines display mode
-	if ('x' in geometry && 'z' in geometry) {
-		if ('radius' in geometry) return EditableCircle
-		if ('rect_size' in geometry) return EditableRectangleCenter
-		return EditableMarker
+	if ('x' in geom && 'z' in geom) {
+		if ('radius' in geom) return <EditableCircle {...props} geometry={geom} />
+		if ('rect_size' in geom)
+			return <EditableRectangleCenter {...props} geometry={geom} />
+		return <EditableMarker {...props} geometry={geom} />
 	}
-	if ('polygons' in geometry) return EditablePolygon
-	if ('lines' in geometry) return EditableLines
-	if ('rectangle' in geometry) return EditableRectangleBounds
-	if ('map_image' in geometry) return EditableMapImage
+	if ('polygons' in geom) return <EditablePolygon {...props} geometry={geom} />
+	if ('lines' in geom) return <EditableLines {...props} geometry={geom} />
+	if ('rectangle' in geom)
+		return <EditableRectangleBounds {...props} geometry={geom} />
+	if ('map_image' in geom)
+		return <EditableMapImage {...props} geometry={geom} />
 	return null
 }
 
-export function EditableMarker(props: {
-	featureId: Feature['id']
-	geometry: MarkerGeometry
-	updateFeature?: (f: FeatureUpdateDTO) => void
-	children?: React.ReactNode
-}) {
+export function EditableMarker(props: EditableFeatureProps<MarkerGeometry>) {
 	const { children, geometry, featureId, updateFeature } = props
 	const { x, z } = geometry
 
@@ -113,12 +118,7 @@ export function EditableMarker(props: {
 	)
 }
 
-export function EditableCircle(props: {
-	featureId: Feature['id']
-	geometry: CircleGeometry
-	updateFeature?: (f: FeatureUpdateDTO) => void
-	children?: React.ReactNode
-}) {
+export function EditableCircle(props: EditableFeatureProps<CircleGeometry>) {
 	const { children, geometry } = props
 	const { x, z, radius } = geometry
 
@@ -133,12 +133,7 @@ export function EditableCircle(props: {
 	)
 }
 
-export function EditableLines(props: {
-	featureId: Feature['id']
-	geometry: LinesGeometry
-	updateFeature?: (f: FeatureUpdateDTO) => void
-	children?: React.ReactNode
-}) {
+export function EditableLines(props: EditableFeatureProps<LinesGeometry>) {
 	const { children, geometry, featureId, updateFeature } = props
 	const { lines } = geometry
 
@@ -171,12 +166,7 @@ export function EditableLines(props: {
 	)
 }
 
-export function EditablePolygon(props: {
-	featureId: Feature['id']
-	geometry: PolygonsGeometry
-	updateFeature?: (f: FeatureUpdateDTO) => void
-	children?: React.ReactNode
-}) {
+export function EditablePolygon(props: EditableFeatureProps<PolygonsGeometry>) {
 	const { children, geometry, featureId, updateFeature } = props
 	const { polygons } = geometry
 
@@ -209,12 +199,9 @@ export function EditablePolygon(props: {
 	)
 }
 
-export function EditableRectangleCenter(props: {
-	featureId: Feature['id']
-	geometry: RectCenterGeometry
-	updateFeature?: (f: FeatureUpdateDTO) => void
-	children?: React.ReactNode
-}) {
+export function EditableRectangleCenter(
+	props: EditableFeatureProps<RectCenterGeometry>
+) {
 	const { children, geometry, featureId, updateFeature } = props
 	const { x, z, rect_size } = geometry
 
@@ -252,12 +239,9 @@ export function EditableRectangleCenter(props: {
 	)
 }
 
-export function EditableRectangleBounds(props: {
-	featureId: Feature['id']
-	geometry: RectBoundsGeometry
-	updateFeature?: (f: FeatureUpdateDTO) => void
-	children?: React.ReactNode
-}) {
+export function EditableRectangleBounds(
+	props: EditableFeatureProps<RectBoundsGeometry>
+) {
 	const { children, geometry, featureId, updateFeature } = props
 	const { rectangle } = geometry
 
@@ -292,12 +276,9 @@ export function EditableRectangleBounds(props: {
 	)
 }
 
-export function EditableMapImage(props: {
-	featureId: Feature['id']
-	geometry: MapImageGeometry
-	updateFeature?: (f: FeatureUpdateDTO) => void
-	children?: React.ReactNode
-}) {
+export function EditableMapImage(
+	props: EditableFeatureProps<MapImageGeometry>
+) {
 	const { children, geometry } = props
 	const { bounds, url } = geometry.map_image
 
