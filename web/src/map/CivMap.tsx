@@ -4,7 +4,7 @@ import { Layer, useLayers } from './Layer'
 import { useLayerState, useUpdateFeature } from './LayerState'
 import LeafMap, { LeafMapProps } from './LeafMap'
 
-export function FeaturesMap(props: LeafMapProps) {
+export function CivMap(props: LeafMapProps) {
 	const [layers] = useLayers()
 
 	const editorLayer = layers[0] // XXX
@@ -12,7 +12,7 @@ export function FeaturesMap(props: LeafMapProps) {
 	return (
 		<LeafMap {...props}>
 			{layers.map((l) => (
-				<EditableLayer layer={l} key={l.url} />
+				<MapLayer layer={l} key={l.url} />
 			))}
 			<EditorCreator layer={editorLayer} />
 			{props.children}
@@ -20,7 +20,7 @@ export function FeaturesMap(props: LeafMapProps) {
 	)
 }
 
-export function EditableLayer(props: { layer: Layer }) {
+export function MapLayer(props: { layer: Layer }) {
 	const { layer } = props
 
 	const [layerState] = useLayerState(layer.url)
