@@ -6,8 +6,8 @@ import {
 	useDiscordProfile,
 	useDiscordToken,
 } from '../DiscordLogin'
+import { Feature } from '../features'
 import { WSClient } from '../ws'
-import { Feature } from './Feature'
 
 export interface LayerState {
 	url: string
