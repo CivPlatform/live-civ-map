@@ -5,13 +5,15 @@ import { Feature } from './MapDB.js'
 
 const { PORT = 8080 } = process.env
 
-export type WSRelayedMessage = { type: 'map:feature'; feature: Feature }
+export type WSRelayedMessage =
+	| { type: 'feature:update'; feature: Feature }
+	| { type: 'feature:delete'; feature: { id: Feature['id'] } & (Feature | {}) }
 
 export type WSClientMessage = WSRelayedMessage
 
 export type WSServerMessage =
 	| WSRelayedMessage
-	| { type: 'map:state'; features: Feature[] }
+	| { type: 'feature:all'; features: Feature[] }
 	| { type: 'user:list'; users: DiscordUser[] }
 	| { type: 'user:join'; user: DiscordUser }
 

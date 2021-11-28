@@ -55,47 +55,60 @@ export class MapDB {
 		this.pool.end()
 	}
 
+	async getFeature(id: Feature['id']): Promise<Feature | undefined> {
+		await this.readyP
+		return this.featuresById[id]
+	}
+
 	async getAllFeatures(): Promise<Feature[]> {
 		await this.readyP
 		return Object.values(this.featuresById)
 	}
 
-	async updateFeature(feature: Feature): Promise<Feature> {
+	async createFeature(feature: Feature): Promise<Feature> {
 		await this.readyP
-		let { id, data } = feature
-		if (!id) id = feature.id = randomUUID()
-		const data_str = JSON.stringify(data)
+		const id = (feature.id = feature.id || randomUUID())
+		const data_str = JSON.stringify(feature.data)
 
-		if (this.featuresById[id]) {
-			await this.pool.query(
-				`UPDATE features SET
-					data_str = $2,
-					last_editor_id = $3,
-					last_edited_ts = $4
-					WHERE id = $1;`,
-				[id, data_str, feature.last_editor_id, feature.last_edited_ts]
-			)
-		} else {
-			await this.pool.query(
-				`INSERT INTO features (
+		await this.pool.query(
+			`INSERT INTO features (
 					id, creator_id, created_ts, last_editor_id, last_edited_ts, data_str
 				) VALUES ($1, $2, $3, $4, $5, $6);`,
-				[
-					id,
-					feature.creator_id,
-					feature.created_ts,
-					feature.last_editor_id,
-					feature.last_edited_ts,
-					data_str,
-				]
-			)
-		}
+			[
+				id,
+				feature.creator_id,
+				feature.created_ts,
+				feature.last_editor_id,
+				feature.last_edited_ts,
+				data_str,
+			]
+		)
 
 		this.featuresById[id] = feature
 		return feature
 	}
 
-	async deleteFeature(feature: { id: string }): Promise<void> {
+	async updateFeature(feature: Feature): Promise<Feature> {
+		await this.readyP
+		let { id, data } = feature
+		if (!id) throw new Error('Invalid feature: missing id')
+		const data_str = JSON.stringify(data)
+
+		// fails if unknown id
+		await this.pool.query(
+			`UPDATE features SET
+						data_str = $2,
+						last_editor_id = $3,
+						last_edited_ts = $4
+						WHERE id = $1;`,
+			[id, data_str, feature.last_editor_id, feature.last_edited_ts]
+		)
+
+		this.featuresById[id] = feature
+		return feature
+	}
+
+	async deleteFeature(feature: { id: Feature['id'] }): Promise<void> {
 		await this.readyP
 		await this.pool.query('DELETE FROM features WHERE id = $1;', [feature.id])
 		delete this.featuresById[feature.id]

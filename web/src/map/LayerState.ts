@@ -115,7 +115,7 @@ export const layerStateRecoil = atomFamily<
 				token,
 				onMessage: (msg) => {
 					switch (msg.type) {
-						case 'map:feature': {
+						case 'feature:update': {
 							const { feature } = msg
 							const featuresById = {
 								...layerCurrent.featuresById,
@@ -124,7 +124,14 @@ export const layerStateRecoil = atomFamily<
 							setSelf((layerCurrent = { ...layerCurrent, featuresById }))
 							return
 						}
-						case 'map:state': {
+						case 'feature:delete': {
+							const { feature } = msg
+							const featuresById = { ...layerCurrent.featuresById }
+							delete featuresById[feature.id]
+							setSelf((layerCurrent = { ...layerCurrent, featuresById }))
+							return
+						}
+						case 'feature:all': {
 							const { features } = msg
 							const featuresById: LayerState['featuresById'] = {}
 							features.forEach((f) => (featuresById[f.id] = f))
@@ -141,7 +148,7 @@ export const layerStateRecoil = atomFamily<
 				Object.values(layerNew.featuresById)
 					.filter((f) => layerCurrent.featuresById[f.id] !== f)
 					.forEach((feature) => {
-						wsc.send({ type: 'map:feature', feature })
+						wsc.send({ type: 'feature:update', feature })
 					})
 				// TODO delete features in old that are missing from new
 				layerCurrent = layerNew
@@ -152,14 +159,14 @@ export const layerStateRecoil = atomFamily<
 	],
 })
 
-export type WSClientMessage =
-	| { type: 'map:deleteFeature'; id: Feature['id'] }
-	| WSRelayedMessage
+export type WSRelayedMessage =
+	| { type: 'feature:update'; feature: Feature }
+	| { type: 'feature:delete'; feature: { id: Feature['id'] } & (Feature | {}) }
 
-export type WSRelayedMessage = { type: 'map:feature'; feature: Feature }
+export type WSClientMessage = WSRelayedMessage
 
 export type WSServerMessage =
 	| WSRelayedMessage
-	| { type: 'map:state'; features: Feature[] }
+	| { type: 'feature:all'; features: Feature[] }
 	| { type: 'user:list'; users: DiscordUser[] }
 	| { type: 'user:join'; user: DiscordUser }
