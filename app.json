@@ -1,0 +1,10 @@
+{
+	"name": "Live Civ Map Server",
+	"repository": "https://github.com/Gjum/live-civ-map",
+	"success_url": "/",
+	"addons": [
+		{
+			"plan": "heroku-postgresql"
+		}
+	]
+}
