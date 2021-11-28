@@ -1,17 +1,26 @@
 import { LeafletEvent } from 'leaflet'
 import { useCallback } from 'react'
-import { Marker, Polygon, Polyline, Rectangle } from 'react-leaflet'
+import {
+	Circle,
+	ImageOverlay,
+	Marker,
+	Polygon,
+	Polyline,
+	Rectangle,
+} from 'react-leaflet'
 import { EditorCreator } from './EditorCreator'
 import {
+	CircleGeometry,
 	Feature,
 	LinesGeometry,
+	MapImageGeometry,
 	MarkerGeometry,
 	PolygonsGeometry,
 	RectBoundsGeometry,
 	RectCenterGeometry,
 } from './Feature'
 import { Layer, useLayers } from './Layer'
-import { useLayerState, useUpdateFeature } from './LayerState'
+import { FeatureUpdateDTO, useLayerState, useUpdateFeature } from './LayerState'
 import LeafMap, { LeafMapProps } from './LeafMap'
 import { Bounds, deepFlip, xzFromLatLng } from './spatial'
 
@@ -48,7 +57,8 @@ export function EditableLayer(props: { layer: Layer }) {
 				if (!EditableFeature) return null
 				return (
 					<EditableFeature
-						feature={feature as any} // TODO
+						featureId={feature.id}
+						geometry={feature.data as any} // TODO
 						updateFeature={updateFeature}
 						key={feature.id}
 					/>
@@ -59,25 +69,28 @@ export function EditableLayer(props: { layer: Layer }) {
 }
 
 function getFeatureComponent(feature: Feature) {
+	const geometry = feature.data
 	// order matters: first matching determines display mode
-	// if ('map_image' in feature) return EditableImage
-	if ('polygons' in feature) return EditablePolygon
-	if ('lines' in feature) return EditableLines
-	if ('rectangle' in feature) return EditableRectangleBounds
-	if ('x' in feature && 'z' in feature) {
-		if ('rect_size' in feature) return EditableRectangleCenter
-		// if ('radius' in feature) return EditableCircle
+	if ('x' in geometry && 'z' in geometry) {
+		if ('radius' in geometry) return EditableCircle
+		if ('rect_size' in geometry) return EditableRectangleCenter
 		return EditableMarker
 	}
+	if ('polygons' in geometry) return EditablePolygon
+	if ('lines' in geometry) return EditableLines
+	if ('rectangle' in geometry) return EditableRectangleBounds
+	if ('map_image' in geometry) return EditableMapImage
 	return null
 }
 
 export function EditableMarker(props: {
-	feature: Feature<MarkerGeometry>
-	updateFeature?: (f: Feature) => void
+	featureId: Feature['id']
+	geometry: MarkerGeometry
+	updateFeature?: (f: FeatureUpdateDTO) => void
+	children?: React.ReactNode
 }) {
-	const { feature, updateFeature } = props
-	const { x, z } = feature
+	const { children, geometry, featureId, updateFeature } = props
+	const { x, z } = geometry
 
 	if (!isFinite(x) || !isFinite(z)) {
 		return null
@@ -90,26 +103,52 @@ export function EditableMarker(props: {
 			eventHandlers={{
 				dragend: (e) => {
 					const { lat: z, lng: x } = e.target.getLatLng()
-					updateFeature?.({ ...feature, x, z })
+					const data = { x, z }
+					updateFeature?.({ id: featureId, data })
 				},
 			}}
-		></Marker>
+		>
+			{children}
+		</Marker>
+	)
+}
+
+export function EditableCircle(props: {
+	featureId: Feature['id']
+	geometry: CircleGeometry
+	updateFeature?: (f: FeatureUpdateDTO) => void
+	children?: React.ReactNode
+}) {
+	const { children, geometry } = props
+	const { x, z, radius } = geometry
+
+	if (!isFinite(x) || !isFinite(z) || !isFinite(radius)) {
+		return null
+	}
+
+	return (
+		<Circle radius={radius} center={[z, x]}>
+			{children}
+		</Circle>
 	)
 }
 
 export function EditableLines(props: {
-	feature: Feature<LinesGeometry>
-	updateFeature?: (f: Feature) => void
+	featureId: Feature['id']
+	geometry: LinesGeometry
+	updateFeature?: (f: FeatureUpdateDTO) => void
+	children?: React.ReactNode
 }) {
-	const { feature, updateFeature } = props
-	const { lines } = feature
+	const { children, geometry, featureId, updateFeature } = props
+	const { lines } = geometry
 
 	const editHandler = useCallback(
 		(e: LeafletEvent) => {
 			const lines = xzFromLatLng(e.target.getLatLngs()) as any // XXX normalize nesting depth
-			updateFeature?.({ ...feature, lines })
+			const data = { lines }
+			updateFeature?.({ id: featureId, data })
 		},
-		[feature, updateFeature]
+		[featureId, updateFeature]
 	)
 
 	// TODO better validation
@@ -126,23 +165,28 @@ export function EditableLines(props: {
 				'editable:vertex:dragend': editHandler,
 				'editable:vertex:deleted': editHandler,
 			}}
-		></Polyline>
+		>
+			{children}
+		</Polyline>
 	)
 }
 
 export function EditablePolygon(props: {
-	feature: Feature<PolygonsGeometry>
-	updateFeature?: (f: Feature) => void
+	featureId: Feature['id']
+	geometry: PolygonsGeometry
+	updateFeature?: (f: FeatureUpdateDTO) => void
+	children?: React.ReactNode
 }) {
-	const { feature, updateFeature } = props
-	const { polygons } = feature
+	const { children, geometry, featureId, updateFeature } = props
+	const { polygons } = geometry
 
 	const editHandler = useCallback(
 		(e: LeafletEvent) => {
 			const polygons = xzFromLatLng(e.target.getLatLngs()) as any // XXX normalize nesting depth
-			updateFeature?.({ ...feature, polygons })
+			const data = { polygons }
+			updateFeature?.({ id: featureId, data })
 		},
-		[feature, updateFeature]
+		[featureId, updateFeature]
 	)
 
 	// TODO better validation
@@ -159,51 +203,20 @@ export function EditablePolygon(props: {
 				'editable:vertex:dragend': editHandler,
 				'editable:vertex:deleted': editHandler,
 			}}
-		></Polygon>
-	)
-}
-
-export function EditableRectangleBounds(props: {
-	feature: Feature<RectBoundsGeometry>
-	updateFeature?: (f: Feature) => void
-}) {
-	const { feature, updateFeature } = props
-	const { rectangle } = feature
-
-	const editHandler = useCallback(
-		(e: LeafletEvent) => {
-			const llbounds = e.target.getBounds()
-			const rectangle: Bounds = [
-				[llbounds.getWest(), llbounds.getSouth()],
-				[llbounds.getEast(), llbounds.getNorth()],
-			]
-			updateFeature?.({ ...feature, rectangle })
-		},
-		[feature, updateFeature]
-	)
-
-	// TODO better validation
-	if (!rectangle) {
-		return null
-	}
-
-	return (
-		<Rectangle
-			bounds={deepFlip(rectangle)}
-			ref={(r) => setEditable(r, updateFeature)}
-			eventHandlers={{
-				'editable:vertex:dragend': editHandler,
-			}}
-		></Rectangle>
+		>
+			{children}
+		</Polygon>
 	)
 }
 
 export function EditableRectangleCenter(props: {
-	feature: Feature<RectCenterGeometry>
-	updateFeature?: (f: Feature) => void
+	featureId: Feature['id']
+	geometry: RectCenterGeometry
+	updateFeature?: (f: FeatureUpdateDTO) => void
+	children?: React.ReactNode
 }) {
-	const { feature, updateFeature } = props
-	const { x, z, rect_size } = feature
+	const { children, geometry, featureId, updateFeature } = props
+	const { x, z, rect_size } = geometry
 
 	const editHandler = useCallback(
 		(e: LeafletEvent) => {
@@ -213,9 +226,10 @@ export function EditableRectangleCenter(props: {
 			const dx = Math.abs(llbounds.getWest() - llbounds.getEast())
 			const dz = Math.abs(llbounds.getNorth() - llbounds.getSouth())
 			const rect_size = Math.min(dx, dz)
-			updateFeature?.({ ...feature, x, z, rect_size })
+			const data = { x, z, rect_size }
+			updateFeature?.({ id: featureId, data })
 		},
-		[feature, updateFeature]
+		[featureId, updateFeature]
 	)
 
 	if (!isFinite(x) || !isFinite(z) || !isFinite(rect_size)) {
@@ -232,7 +246,70 @@ export function EditableRectangleCenter(props: {
 			eventHandlers={{
 				'editable:vertex:dragend': editHandler,
 			}}
-		></Rectangle>
+		>
+			{children}
+		</Rectangle>
+	)
+}
+
+export function EditableRectangleBounds(props: {
+	featureId: Feature['id']
+	geometry: RectBoundsGeometry
+	updateFeature?: (f: FeatureUpdateDTO) => void
+	children?: React.ReactNode
+}) {
+	const { children, geometry, featureId, updateFeature } = props
+	const { rectangle } = geometry
+
+	const editHandler = useCallback(
+		(e: LeafletEvent) => {
+			const llbounds = e.target.getBounds()
+			const rectangle: Bounds = [
+				[llbounds.getWest(), llbounds.getSouth()],
+				[llbounds.getEast(), llbounds.getNorth()],
+			]
+			const data = { rectangle }
+			updateFeature?.({ id: featureId, data })
+		},
+		[featureId, updateFeature]
+	)
+
+	// TODO better validation
+	if (!rectangle) {
+		return null
+	}
+
+	return (
+		<Rectangle
+			bounds={deepFlip(rectangle)}
+			ref={(r) => setEditable(r, updateFeature)}
+			eventHandlers={{
+				'editable:vertex:dragend': editHandler,
+			}}
+		>
+			{children}
+		</Rectangle>
+	)
+}
+
+export function EditableMapImage(props: {
+	featureId: Feature['id']
+	geometry: MapImageGeometry
+	updateFeature?: (f: FeatureUpdateDTO) => void
+	children?: React.ReactNode
+}) {
+	const { children, geometry } = props
+	const { bounds, url } = geometry.map_image
+
+	// TODO better validation
+	if (!url || !bounds) {
+		return null
+	}
+
+	return (
+		<ImageOverlay url={url} bounds={deepFlip(bounds)}>
+			{children}
+		</ImageOverlay>
 	)
 }
 
