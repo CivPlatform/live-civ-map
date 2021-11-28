@@ -1,8 +1,7 @@
 import { MapDB } from './MapDB.js'
 import { WSClientMessage, WSServer, WSSession } from './WSServer.js'
 
-const { DATABASE_URL = '' } = process.env
-if (!DATABASE_URL) throw new Error(`Missing DATABASE_URL`)
+const { DATABASE_URL = 'postgres://localhost:5432/postgres' } = process.env
 
 class Main {
 	mapDb = new MapDB(DATABASE_URL)

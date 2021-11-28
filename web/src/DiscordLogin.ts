@@ -4,7 +4,7 @@ import useSWRImmutable from 'swr/immutable'
 // react-js only exposes env starting with REACT_APP_ https://create-react-app.dev/docs/adding-custom-environment-variables/
 const DISCORD_APP_ID = process.env.REACT_APP_DISCORD_APP_ID
 const DISCORD_OAUTH2_REDIRECT_URI =
-	process.env.REACT_APP_DISCORD_OAUTH2_REDIRECT_URI
+	process.env.REACT_APP_DISCORD_OAUTH2_REDIRECT_URI || process.env.PUBLIC_URL
 
 export interface DiscordUser {
 	id: string
