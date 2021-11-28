@@ -43,14 +43,17 @@ export function EditorCreator(props: { layer: Layer }) {
 				}
 			}
 			case 'line': {
-				const id = createFeature({ data: { lines: [] } })
-				if (!id) return console.error('Must log in to create line')
-
+				let id: string | null = null
 				const tempLine = map.editTools.startPolyline()
 				tempLine.on('editable:drawing:clicked', () => {
 					const lines = xzFromLatLng(tempLine.getLatLngs()) as any // XXX normalize nesting depth
 					if (lines.flat(99).length >= 4) {
-						updateFeature({ id, data: { lines } })
+						if (!id) {
+							id = createFeature({ data: { lines } })
+							if (!id) return console.error('Must log in to create line')
+						} else {
+							updateFeature({ id, data: { lines } })
+						}
 					}
 				})
 				tempLine.on('editable:drawing:commit', () => {
@@ -61,14 +64,17 @@ export function EditorCreator(props: { layer: Layer }) {
 				}
 			}
 			case 'polygon': {
-				const id = createFeature({ data: { polygons: [] } })
-				if (!id) return console.error('Must log in to create polygon')
-
+				let id: string | null = null
 				const tempPoly = map.editTools.startPolygon()
 				tempPoly.on('editable:drawing:clicked', () => {
 					const polygons = xzFromLatLng(tempPoly.getLatLngs()) as any // XXX normalize nesting depth
 					if (polygons.flat(99).length >= 6) {
-						updateFeature({ id, data: { polygons } })
+						if (!id) {
+							id = createFeature({ data: { polygons } })
+							if (!id) return console.error('Must log in to create polygon')
+						} else {
+							updateFeature({ id, data: { polygons } })
+						}
 					}
 				})
 				tempPoly.on('editable:drawing:commit', () => {

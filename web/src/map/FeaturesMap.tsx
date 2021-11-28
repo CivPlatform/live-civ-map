@@ -152,7 +152,7 @@ export function EditableLines(props: {
 	)
 
 	// TODO better validation
-	if (!lines) {
+	if (!lines || lines.flat(99).length < 4) {
 		return null
 	}
 
@@ -190,7 +190,7 @@ export function EditablePolygon(props: {
 	)
 
 	// TODO better validation
-	if (!polygons) {
+	if (!polygons || polygons.flat(99).length < 6) {
 		return null
 	}
 
