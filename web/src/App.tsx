@@ -1,13 +1,13 @@
 import { useSetRecoilState } from 'recoil'
 import './App.css'
 import { DiscordUserIcon as DiscordUserMenu } from './LoginMenu'
+import { CivMap } from './map/CivMap'
 import { createdFeatureTypeRecoil } from './map/EditorCreator'
-import { FeaturesMap } from './map/FeaturesMap'
 
 export function App() {
 	return (
 		<div className="App">
-			<FeaturesMap height="100vh" />
+			<CivMap height="100vh" />
 			<Menu />
 		</div>
 	)
