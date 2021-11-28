@@ -1,9 +1,16 @@
 import PG from 'pg'
 import { v4 as randomUUID } from 'uuid'
 
-export type Feature = { id: string; [k: string]: any }
+export interface Feature {
+	id: string
+	creator_id: string
+	created_ts: number
+	last_editor_id: string
+	last_edited_ts: number
+	data: any
+}
 
-export type Geometry = any
+type FeatureRow = Omit<Feature, 'data'> & { data_str: string }
 
 export class MapDB {
 	private pool: PG.Pool
@@ -29,13 +36,17 @@ export class MapDB {
 			this.pool.query(`CREATE TABLE IF NOT EXISTS
 				features (
 					id TEXT NOT NULL,
+					creator_id TEXT NOT NULL,
+					created_ts BIGINT NOT NULL,
+					last_editor_id TEXT NOT NULL,
+					last_edited_ts BIGINT NOT NULL,
 					data_str TEXT
 				);`),
 		]).then(async () => {
 			const { rows } = await this.pool.query('SELECT * FROM features;')
-			for (const { id, data_str } of rows) {
+			for (const { data_str, ...row } of rows as FeatureRow[]) {
 				const data = JSON.parse(data_str)
-				this.featuresById[id] = { id, ...data }
+				this.featuresById[row.id] = { data, ...row }
 			}
 		})
 	}
@@ -51,19 +62,32 @@ export class MapDB {
 
 	async updateFeature(feature: Feature): Promise<Feature> {
 		await this.readyP
-		let { id, ...data } = feature
+		let { id, data } = feature
 		if (!id) id = feature.id = randomUUID()
 		const data_str = JSON.stringify(data)
 
 		if (this.featuresById[id]) {
-			await this.pool.query('UPDATE features SET data_str=$2 WHERE id = $1;', [
-				id,
-				data_str,
-			])
+			await this.pool.query(
+				`UPDATE features SET
+					data_str = $2,
+					last_editor_id = $3,
+					last_edited_ts = $4
+					WHERE id = $1;`,
+				[id, data_str, feature.last_editor_id, feature.last_edited_ts]
+			)
 		} else {
 			await this.pool.query(
-				'INSERT INTO features (id, data_str) VALUES ($1, $2);',
-				[id, data_str]
+				`INSERT INTO features (
+					id, creator_id, created_ts, last_editor_id, last_edited_ts, data_str
+				) VALUES ($1, $2, $3, $4, $5, $6);`,
+				[
+					id,
+					feature.creator_id,
+					feature.created_ts,
+					feature.last_editor_id,
+					feature.last_edited_ts,
+					data_str,
+				]
 			)
 		}
 

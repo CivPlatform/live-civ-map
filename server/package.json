@@ -9,6 +9,7 @@
 		"pg:init": "initdb postgres/ && echo \"unix_socket_directories = './'\" >> postgres/postgresql.conf",
 		"pg:start": "pg_ctl start -D postgres/",
 		"pg:stop": "pg_ctl stop -D postgres/",
+		"psql": "psql -h localhost postgres",
 		"start": "node dist/main.js",
 		"start:dev": "ts-node -r dotenv/config src/main.ts",
 		"build": "tsc"

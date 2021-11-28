@@ -1,7 +1,11 @@
 import { useCallback } from 'react'
 import { atomFamily, useRecoilState } from 'recoil'
 import { v4 as randomUUID } from 'uuid'
-import { DiscordUser, useDiscordToken } from '../DiscordLogin'
+import {
+	DiscordUser,
+	useDiscordProfile,
+	useDiscordToken,
+} from '../DiscordLogin'
 import { WSClient } from '../ws'
 import { Feature } from './Feature'
 
@@ -17,23 +21,80 @@ export function useLayerState(url: string) {
 
 export const makeFeatureId = () => randomUUID()
 
-export function useUpdateFeature(url: string) {
+export type FeatureCreateDTO = Omit<
+	Feature,
+	'id' | 'creator_id' | 'created_ts' | 'last_editor_id' | 'last_edited_ts'
+>
+
+export type FeatureUpdateDTO = Omit<
+	Feature,
+	'creator_id' | 'created_ts' | 'last_editor_id' | 'last_edited_ts'
+>
+
+export function useCreateFeature(layerUrl: string) {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const [layerState, setLayerState] = useLayerState(url)
+	const [_layerState, setLayerState] = useLayerState(layerUrl)
+
+	const profile = useDiscordProfile()
 
 	return useCallback(
-		(feature: Feature & { id?: Feature['id'] }): Feature => {
-			if (!feature.id) feature = { ...feature, id: makeFeatureId() }
+		(featurePartial: FeatureCreateDTO) => {
+			if (!profile) {
+				console.error('Cannot create feature while logged out', featurePartial)
+				return null
+			}
+			const id = makeFeatureId()
 			setLayerState((layerState) => {
+				const feature: Feature = {
+					id,
+					creator_id: profile.id,
+					created_ts: Date.now(),
+					last_editor_id: profile.id,
+					last_edited_ts: Date.now(),
+					data: featurePartial.data || {},
+				}
+				console.log('creating feature', feature)
 				const featuresById = {
 					...layerState.featuresById,
 					[feature.id]: feature,
 				}
 				return { ...layerState, featuresById }
 			})
-			return feature
+			return id
 		},
-		[setLayerState]
+		[profile, setLayerState]
+	)
+}
+
+export function useUpdateFeature(layerUrl: string) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [_layerState, setLayerState] = useLayerState(layerUrl)
+
+	const profile = useDiscordProfile()
+
+	return useCallback(
+		(featurePartial: FeatureUpdateDTO) => {
+			if (!profile) {
+				console.error('Cannot update feature while logged out', featurePartial)
+				return
+			}
+			setLayerState((layerState) => {
+				const existing = layerState.featuresById[featurePartial.id]
+				const feature: Feature = {
+					...existing,
+					last_editor_id: profile.id,
+					last_edited_ts: Date.now(),
+					data: { ...existing.data, ...featurePartial.data },
+				}
+				console.log('updating feature', feature)
+				const featuresById = {
+					...layerState.featuresById,
+					[feature.id]: feature,
+				}
+				return { ...layerState, featuresById }
+			})
+		},
+		[profile, setLayerState]
 	)
 }
 
@@ -41,7 +102,7 @@ export const layerStateRecoil = atomFamily<
 	LayerState,
 	[string, string | undefined]
 >({
-	key: 'layer',
+	key: 'layerState',
 	default: ([url, token]) => ({ url, featuresById: {} }),
 	effects_UNSTABLE: ([url, token]) => [
 		({ setSelf, onSet }) => {

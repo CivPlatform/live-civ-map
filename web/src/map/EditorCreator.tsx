@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import { atom, useRecoilState } from 'recoil'
-import { Feature } from './Feature'
 import { Layer } from './Layer'
-import { makeFeatureId, useUpdateFeature } from './LayerState'
+import { useCreateFeature, useUpdateFeature } from './LayerState'
 import { Bounds, xzFromLatLng } from './spatial'
 
 export type CreatedFeatureType =
@@ -24,6 +23,8 @@ export function EditorCreator(props: { layer: Layer }) {
 		createdFeatureTypeRecoil
 	)
 
+	const createFeature = useCreateFeature(props.layer.url)
+
 	const updateFeature = useUpdateFeature(props.layer.url)
 
 	const map = useMap()
@@ -31,11 +32,10 @@ export function EditorCreator(props: { layer: Layer }) {
 	useEffect(() => {
 		switch (createdFeatureType) {
 			case 'marker': {
-				const id = makeFeatureId()
 				const tempMarker = map.editTools.startMarker()
 				tempMarker.on('editable:drawing:commit', () => {
 					const [x, z] = xzFromLatLng(tempMarker.getLatLng())
-					updateFeature({ id, x, z })
+					createFeature({ data: { x, z } })
 					setCreatedFeatureType(null)
 				})
 				return () => {
@@ -43,13 +43,14 @@ export function EditorCreator(props: { layer: Layer }) {
 				}
 			}
 			case 'line': {
-				const id = makeFeatureId()
-				let feature: Feature = { id, lines: [] }
+				const id = createFeature({ data: { lines: [] } })
+				if (!id) return console.error('Must log in to create line')
+
 				const tempLine = map.editTools.startPolyline()
 				tempLine.on('editable:drawing:clicked', () => {
 					const lines = xzFromLatLng(tempLine.getLatLngs()) as any // XXX normalize nesting depth
 					if (lines.flat(99).length >= 4) {
-						feature = updateFeature({ ...feature, lines })
+						updateFeature({ id, data: { lines } })
 					}
 				})
 				tempLine.on('editable:drawing:commit', () => {
@@ -60,12 +61,14 @@ export function EditorCreator(props: { layer: Layer }) {
 				}
 			}
 			case 'polygon': {
-				let feature: Feature = { id: makeFeatureId(), polygons: [] }
+				const id = createFeature({ data: { polygons: [] } })
+				if (!id) return console.error('Must log in to create polygon')
+
 				const tempPoly = map.editTools.startPolygon()
 				tempPoly.on('editable:drawing:clicked', () => {
 					const polygons = xzFromLatLng(tempPoly.getLatLngs()) as any // XXX normalize nesting depth
 					if (polygons.flat(99).length >= 6) {
-						updateFeature({ ...feature, polygons })
+						updateFeature({ id, data: { polygons } })
 					}
 				})
 				tempPoly.on('editable:drawing:commit', () => {
@@ -76,7 +79,6 @@ export function EditorCreator(props: { layer: Layer }) {
 				}
 			}
 			case 'rectangle': {
-				const id = makeFeatureId()
 				const tempRect = map.editTools.startRectangle()
 				tempRect.on('editable:drawing:commit', () => {
 					const llbounds = tempRect.getBounds()
@@ -84,7 +86,7 @@ export function EditorCreator(props: { layer: Layer }) {
 						[llbounds.getWest(), llbounds.getSouth()],
 						[llbounds.getEast(), llbounds.getNorth()],
 					]
-					updateFeature({ id, rectangle })
+					createFeature({ data: { rectangle } })
 					setCreatedFeatureType(null)
 				})
 				return () => {
@@ -92,7 +94,6 @@ export function EditorCreator(props: { layer: Layer }) {
 				}
 			}
 			case 'map_image': {
-				const id = makeFeatureId()
 				const tempRect = map.editTools.startRectangle()
 				tempRect.on('editable:drawing:commit', () => {
 					const llbounds = tempRect.getBounds()
@@ -104,7 +105,7 @@ export function EditorCreator(props: { layer: Layer }) {
 					do {
 						url = prompt('Enter map image URL')
 					} while (!url?.match(/^https?:\/\/.+\..+/))
-					updateFeature({ id, map_image: { bounds, url } })
+					createFeature({ data: { map_image: { bounds, url } } })
 					setCreatedFeatureType(null)
 				})
 				return () => {
@@ -112,7 +113,13 @@ export function EditorCreator(props: { layer: Layer }) {
 				}
 			}
 		}
-	}, [map.editTools, updateFeature, createdFeatureType, setCreatedFeatureType])
+	}, [
+		map.editTools,
+		createFeature,
+		updateFeature,
+		createdFeatureType,
+		setCreatedFeatureType,
+	])
 
 	return null
 }
