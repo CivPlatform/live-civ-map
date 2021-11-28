@@ -4,24 +4,7 @@ Log in with Discord and edit a map, live updating changes between all connected 
 
 Multiple layers for different access restrictions.
 
-## Development setup
-
-- install Postgresql, NodeJS, Yarn
-- the following commands assume they are run in the project root; you can leave out the `--cwd=server` if you `cd server/` first
-- create a database: `yarn --cwd=server pg:init`
-- start the database: `yarn --cwd=server pg:start`
-	- to stop it later: `yarn --cwd=server pg:stop`
-	- to run queries: `yarn --cwd=server psql`
-- install the server dependencies: `yarn --cwd=server install`
-- build and launch the server: `yarn --cwd=server build && yarn --cwd=server start`
-	- this reads the `DATABASE_URL` environment variable if set, defaulting to `postgres://localhost:5432/postgres` which matches the setup above
-- install the web dependencies: `yarn --cwd=web install`
-- create a [Discord App](https://discord.com/developers/applications) for the login functionality
-	- add the OAuth2 Redirect URI `http://localhost:3000` (ReactJS development server default port)
-- create a `web/.env` file like [below](#environment-variables)
-- start the web app in development mode: `yarn --cwd=web start`
-
-## Set up a Map Server
+## Set up your own Map Server
 
 Easy setup: [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
@@ -59,3 +42,20 @@ REACT_APP_DISCORD_OAUTH2_REDIRECT_URI=https://live-civ-map.netlify.app/
 > **WARNING:** Do not store any secrets (such as private API keys) in your React app!
 >
 > These environment variables are embedded into the build, meaning anyone can view them by inspecting your app's files.
+
+## Development setup
+
+- install Postgresql, NodeJS, Yarn
+- the following commands assume they are run in the project root; you can leave out the `--cwd=server` if you `cd server/` first
+- create a database: `yarn --cwd=server pg:init`
+- start the database: `yarn --cwd=server pg:start`
+	- to stop it later: `yarn --cwd=server pg:stop`
+	- to run queries: `yarn --cwd=server psql`
+- install the server dependencies: `yarn --cwd=server install`
+- build and launch the server: `yarn --cwd=server build && yarn --cwd=server start`
+	- this reads the `DATABASE_URL` environment variable if set, defaulting to `postgres://localhost:5432/postgres` which matches the setup above
+- install the web dependencies: `yarn --cwd=web install`
+- create a [Discord App](https://discord.com/developers/applications) for the login functionality
+	- add the OAuth2 Redirect URI `http://localhost:3000` (ReactJS development server default port)
+- create a `web/.env` file like [here](#environment-variables)
+- start the web app in development mode: `yarn --cwd=web start`
