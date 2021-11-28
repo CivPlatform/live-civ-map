@@ -1,7 +1,7 @@
 import { EditableFeature, FeatureGeometry } from '../features'
+import { Layer, useLayers } from '../state/Layer'
+import { useLayerState, useUpdateFeature } from '../state/LayerState'
 import { EditorCreator } from './EditorCreator'
-import { Layer, useLayers } from './Layer'
-import { useLayerState, useUpdateFeature } from './LayerState'
 import LeafMap, { LeafMapProps } from './LeafMap'
 
 export function CivMap(props: LeafMapProps) {

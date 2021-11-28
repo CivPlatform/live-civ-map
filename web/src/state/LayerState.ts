@@ -6,8 +6,8 @@ import {
 	useDiscordProfile,
 	useDiscordToken,
 } from '../DiscordLogin'
-import { Feature } from '../features'
 import { WSClient } from '../ws'
+import { Feature } from './Feature'
 
 export interface LayerState {
 	url: string
@@ -30,6 +30,8 @@ export type FeatureUpdateDTO = Omit<
 	Feature,
 	'creator_id' | 'created_ts' | 'last_editor_id' | 'last_edited_ts'
 >
+
+export type FeatureDeleteDTO = Pick<Feature, 'id'>
 
 export function useCreateFeature(layerUrl: string) {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -54,11 +56,7 @@ export function useCreateFeature(layerUrl: string) {
 					data: featurePartial.data || {},
 				}
 				console.log('creating feature', feature)
-				const featuresById = {
-					...layerState.featuresById,
-					[feature.id]: feature,
-				}
-				return { ...layerState, featuresById }
+				return setFeatureInLayerObjct(layerState, feature)
 			})
 			return id
 		},
@@ -87,15 +85,28 @@ export function useUpdateFeature(layerUrl: string) {
 					data: { ...existing.data, ...featurePartial.data },
 				}
 				console.log('updating feature', feature)
-				const featuresById = {
-					...layerState.featuresById,
-					[feature.id]: feature,
-				}
-				return { ...layerState, featuresById }
+				return setFeatureInLayerObjct(layerState, feature)
 			})
 		},
 		[profile, setLayerState]
 	)
+}
+
+function setFeatureInLayerObjct(layer: LayerState, feature: Feature) {
+	const featuresById = {
+		...layer.featuresById,
+		[feature.id]: feature,
+	}
+	return { ...layer, featuresById }
+}
+
+function deleteFeatureInLayerObject(
+	layer: LayerState,
+	feature: FeatureDeleteDTO
+) {
+	const featuresById = { ...layer.featuresById }
+	delete featuresById[feature.id]
+	return { ...layer, featuresById }
 }
 
 export const layerStateRecoil = atomFamily<
@@ -116,19 +127,21 @@ export const layerStateRecoil = atomFamily<
 				onMessage: (msg) => {
 					switch (msg.type) {
 						case 'feature:update': {
-							const { feature } = msg
-							const featuresById = {
-								...layerCurrent.featuresById,
-								[feature.id]: feature,
-							}
-							setSelf((layerCurrent = { ...layerCurrent, featuresById }))
+							setSelf(
+								(layerCurrent = setFeatureInLayerObjct(
+									layerCurrent,
+									msg.feature
+								))
+							)
 							return
 						}
 						case 'feature:delete': {
-							const { feature } = msg
-							const featuresById = { ...layerCurrent.featuresById }
-							delete featuresById[feature.id]
-							setSelf((layerCurrent = { ...layerCurrent, featuresById }))
+							setSelf(
+								(layerCurrent = deleteFeatureInLayerObject(
+									layerCurrent,
+									msg.feature
+								))
+							)
 							return
 						}
 						case 'feature:all': {
@@ -161,7 +174,7 @@ export const layerStateRecoil = atomFamily<
 
 export type WSRelayedMessage =
 	| { type: 'feature:update'; feature: Feature }
-	| { type: 'feature:delete'; feature: { id: Feature['id'] } & (Feature | {}) }
+	| { type: 'feature:delete'; feature: FeatureDeleteDTO }
 
 export type WSClientMessage = WSRelayedMessage
 
