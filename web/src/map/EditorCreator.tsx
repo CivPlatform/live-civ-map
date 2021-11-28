@@ -107,11 +107,12 @@ export function EditorCreator(props: { layer: Layer }) {
 						[llbounds.getWest(), llbounds.getSouth()],
 						[llbounds.getEast(), llbounds.getNorth()],
 					]
-					let url
-					do {
-						url = prompt('Enter map image URL')
-					} while (!url?.match(/^https?:\/\/.+\..+/))
-					createFeature({ data: { map_image: { bounds, url } } })
+					const url = prompt('Enter map image URL')
+					if (url?.match(/^https?:\/\/.+\..+/)) {
+						createFeature({ data: { map_image: { bounds, url } } })
+					} else {
+						alert('Invalid image url. No overlay created.')
+					}
 					setCreatedFeatureType(null)
 				})
 				return () => {
