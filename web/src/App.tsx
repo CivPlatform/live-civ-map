@@ -11,7 +11,7 @@ import { Omnibox } from './components/Omnibox'
 import { DiscordUserIcon, DiscordUserRow } from './LoginMenu'
 import { CivMap } from './map/CivMap'
 import { createdFeatureTypeRecoil } from './map/EditorCreator'
-import { useLayers } from './map/Layer'
+import { useLayers } from './state/Layer'
 
 export function App() {
 	return (

@@ -1,4 +1,5 @@
-import { FeatureUpdateDTO } from '../map/LayerState'
+import { Feature } from '../state/Feature'
+import { FeatureUpdateDTO } from '../state/LayerState'
 import { CircleGeometry, EditableCircle } from './Circle'
 import { EditableLines, LinesGeometry } from './Lines'
 import { EditableMapImage, MapImageGeometry } from './MapImage'
@@ -6,16 +7,6 @@ import { EditableMarker, MarkerGeometry } from './Marker'
 import { EditablePolygon, PolygonsGeometry } from './Polygons'
 import { EditableRectBounds, RectBoundsGeometry } from './RectBounds'
 import { EditableRectCenter, RectCenterGeometry } from './RectCenter'
-
-export interface Feature {
-	/** should never be exposed to user */
-	id: string
-	data: { [k: string]: any }
-	creator_id: string
-	created_ts: number
-	last_editor_id: string
-	last_edited_ts: number
-}
 
 export type FeatureGeometry =
 	| MarkerGeometry
@@ -51,6 +42,7 @@ export function EditableFeature(props: EditableFeatureProps<FeatureGeometry>) {
 	return null
 }
 
+/** Used internally to set up a Leaflet feature for editing. See usages. */
 export function setEditable(r: any, enabled: any) {
 	if (!r) return
 	setImmediate(() =>

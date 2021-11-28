@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import { atom, useRecoilState } from 'recoil'
-import { Layer } from './Layer'
-import { useCreateFeature, useUpdateFeature } from './LayerState'
+import { Layer } from '../state/Layer'
+import { useCreateFeature, useUpdateFeature } from '../state/LayerState'
 import { Bounds, xzFromLatLng } from './spatial'
 
 export type CreatedFeatureType =
