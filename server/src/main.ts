@@ -12,7 +12,7 @@ class Main {
 		// TODO check authorization
 
 		const features = await this.mapDb.getAllFeatures()
-		session.send({ type: 'map:state', features })
+		session.send({ type: 'feature:all', features })
 
 		// includes this session's user
 		const users = this.wsServer.sessions.map((s) => s.discordUser)
@@ -25,8 +25,22 @@ class Main {
 
 	async handleClientPacket(msg: WSClientMessage, session: WSSession) {
 		switch (msg.type) {
-			case 'map:feature': {
-				await this.mapDb.updateFeature(msg.feature)
+			case 'feature:update': {
+				msg.feature.last_editor_id = session.discordUser.id
+				const existing = await this.mapDb.getFeature(msg.feature.id)
+				if (!existing) {
+					msg.feature.creator_id = session.discordUser.id
+					await this.mapDb.createFeature(msg.feature)
+				} else {
+					msg.feature.creator_id = existing.creator_id
+					msg.feature.created_ts = existing.created_ts
+					await this.mapDb.updateFeature(msg.feature)
+				}
+				this.wsServer.broadcast(msg, session)
+				return
+			}
+			case 'feature:delete': {
+				await this.mapDb.deleteFeature(msg.feature)
 				this.wsServer.broadcast(msg, session)
 				return
 			}
