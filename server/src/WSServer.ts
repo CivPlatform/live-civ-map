@@ -1,9 +1,18 @@
+import { IncomingMessage } from 'http'
 import { URL } from 'url'
 import { WebSocket, WebSocketServer } from 'ws'
 import { DiscordUser, fetchDiscordUserData } from './DiscordLogin.js'
-import { Feature } from './MapDB.js'
 
 const { PORT = 8080 } = process.env
+
+export interface Feature {
+	id: string
+	creator_id: string
+	created_ts: number
+	last_editor_id: string
+	last_edited_ts: number
+	data: any
+}
 
 export type WSRelayedMessage =
 	| { type: 'feature:update'; feature: Feature }
@@ -43,7 +52,7 @@ export class WSServer {
 				return wsc.close()
 			}
 
-			const session = new WSSession(wsc, dUser, main)
+			const session = new WSSession(wsc, req, dUser, main)
 			this.sessions.push(session)
 			wsc.on('close', () => {
 				this.sessions = this.sessions.filter((c) => c !== session)
@@ -64,15 +73,27 @@ export class WSServer {
 
 export class WSSession {
 	wsc: WebSocket
+	req: IncomingMessage
 	main: Main
 	discordUser: DiscordUser
 	discordTag: string
+	layer: string
 
-	constructor(wsc: WebSocket, dUser: DiscordUser, main: Main) {
+	constructor(
+		wsc: WebSocket,
+		req: IncomingMessage,
+		dUser: DiscordUser,
+		main: Main
+	) {
 		this.wsc = wsc
+		this.req = req
 		this.main = main
 		this.discordUser = dUser
 		this.discordTag = `@${dUser.username}#${dUser.discriminator}`
+
+		// req.url may have query parameters
+		const url = new URL('ws://host' + req.url)
+		this.layer = url.pathname
 
 		wsc.on('close', (code, reason) => {
 			this.warn('Closed:', code, reason.toString())

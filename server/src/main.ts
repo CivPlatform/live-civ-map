@@ -9,9 +9,9 @@ class Main {
 	wsServer = new WSServer(this)
 
 	async handleClientConnected(session: WSSession) {
-		// TODO check authorization
+		// TODO check authorization for layer
 
-		const features = await this.mapDb.getAllFeatures()
+		const features = await this.mapDb.getAllFeaturesInLayer(session.layer)
 		session.send({ type: 'feature:all', features })
 
 		// includes this session's user
@@ -26,21 +26,28 @@ class Main {
 	async handleClientPacket(msg: WSClientMessage, session: WSSession) {
 		switch (msg.type) {
 			case 'feature:update': {
+				// TODO check authorization
+
 				msg.feature.last_editor_id = session.discordUser.id
-				const existing = await this.mapDb.getFeature(msg.feature.id)
+				const existing = await this.mapDb.getFeature(
+					session.layer,
+					msg.feature.id
+				)
 				if (!existing) {
 					msg.feature.creator_id = session.discordUser.id
-					await this.mapDb.createFeature(msg.feature)
+					await this.mapDb.createFeature(session.layer, msg.feature)
 				} else {
 					msg.feature.creator_id = existing.creator_id
 					msg.feature.created_ts = existing.created_ts
-					await this.mapDb.updateFeature(msg.feature)
+					await this.mapDb.updateFeature(session.layer, msg.feature)
 				}
 				this.wsServer.broadcast(msg, session)
 				return
 			}
 			case 'feature:delete': {
-				await this.mapDb.deleteFeature(msg.feature)
+				// TODO check authorization
+
+				await this.mapDb.deleteFeature(session.layer, msg.feature)
 				this.wsServer.broadcast(msg, session)
 				return
 			}
