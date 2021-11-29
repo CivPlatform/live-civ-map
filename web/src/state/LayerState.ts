@@ -14,7 +14,7 @@ export interface LayerState {
 	featuresById: Record<string, Feature>
 }
 
-export function useLayerState(url: string) {
+export function useLayerState(url: string | undefined | null) {
 	const token = useDiscordToken()
 	return useRecoilState(layerStateRecoil([url, token]))
 }
@@ -33,7 +33,7 @@ export type FeatureUpdateDTO = Omit<
 
 export type FeatureDeleteDTO = Pick<Feature, 'id'>
 
-export function useCreateFeature(layerUrl: string) {
+export function useCreateFeature(layerUrl: string | undefined | null) {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [_layerState, setLayerState] = useLayerState(layerUrl)
 
@@ -47,6 +47,7 @@ export function useCreateFeature(layerUrl: string) {
 			}
 			const id = makeFeatureId()
 			setLayerState((layerState) => {
+				if (!layerState) return layerState
 				const feature: Feature = {
 					id,
 					creator_id: profile.id,
@@ -64,7 +65,7 @@ export function useCreateFeature(layerUrl: string) {
 	)
 }
 
-export function useUpdateFeature(layerUrl: string) {
+export function useUpdateFeature(layerUrl: string | undefined | null) {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [_layerState, setLayerState] = useLayerState(layerUrl)
 
@@ -77,6 +78,7 @@ export function useUpdateFeature(layerUrl: string) {
 				return
 			}
 			setLayerState((layerState) => {
+				if (!layerState) return layerState
 				const existing = layerState.featuresById[featurePartial.id]
 				const feature: Feature = {
 					...existing,
@@ -110,13 +112,14 @@ function deleteFeatureInLayerObject(
 }
 
 export const layerStateRecoil = atomFamily<
-	LayerState,
-	[string, string | undefined]
+	LayerState | undefined | null,
+	[string | undefined | null, string | undefined | null]
 >({
 	key: 'layerState',
-	default: ([url, token]) => ({ url, featuresById: {} }),
+	default: null,
 	effects_UNSTABLE: ([url, token]) => [
 		({ setSelf, onSet }) => {
+			if (!url) return
 			if (!token) return
 
 			let layerCurrent: LayerState = { url, featuresById: {} }
@@ -158,6 +161,7 @@ export const layerStateRecoil = atomFamily<
 			setSelf(layerCurrent)
 
 			onSet((layerNew) => {
+				layerNew = layerNew || { url, featuresById: {} }
 				Object.values(layerNew.featuresById)
 					.filter((f) => layerCurrent.featuresById[f.id] !== f)
 					.forEach((feature) => {
