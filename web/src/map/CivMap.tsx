@@ -7,14 +7,12 @@ import LeafMap, { LeafMapProps } from './LeafMap'
 export function CivMap(props: LeafMapProps) {
 	const [layers] = useLayers()
 
-	const editorLayer = layers[0] // XXX
-
 	return (
 		<LeafMap {...props}>
 			{layers.map((l) => (
 				<MapLayer layer={l} key={l.url} />
 			))}
-			<EditorCreator layer={editorLayer} />
+			<EditorCreator />
 			{props.children}
 		</LeafMap>
 	)
