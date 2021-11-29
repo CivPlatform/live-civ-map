@@ -17,6 +17,7 @@ export function DiscordUserIcon(
 				src="/images/discord-bw.svg"
 				alt="Discord Login"
 				title="Log in with Discord"
+				onClick={() => (document.location.href = prepareOAuthLoginUrl())}
 				{...props}
 				style={{ borderRadius: 999, opacity: 0.4, ...props.style }}
 			/>

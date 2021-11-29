@@ -51,6 +51,8 @@ export function App() {
 						height: 32,
 						width: 32,
 						boxShadow: '0 0 8px black',
+						backgroundColor: 'white',
+						opacity: 1,
 					}}
 				/>
 			</Router>
