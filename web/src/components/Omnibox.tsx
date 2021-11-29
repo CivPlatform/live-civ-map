@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router'
 import { useSearchQuery } from '../state/Search'
 
 export function Omnibox() {
+	const navigate = useNavigate()
 	const [searchQuery, setSearchQuery] = useSearchQuery()
 	return (
 		<div
@@ -12,7 +14,6 @@ export function Omnibox() {
 				maxWidth: 284,
 				minWidth: 284,
 				height: 40,
-				padding: '0 8px',
 				boxSizing: 'border-box',
 				display: 'flex',
 				flexDirection: 'row',
@@ -22,27 +23,30 @@ export function Omnibox() {
 			}}
 		>
 			<button
+				title="Menu"
+				onClick={() => navigate(`/`)}
 				style={{
 					height: 40,
 					width: 40,
 					border: 'none',
 					backgroundColor: 'white',
+					borderRadius: 4,
 					cursor: 'pointer',
 				}}
-				title="Menu"
 			>
 				=
 			</button>
 			<input
 				type="search"
 				placeholder="Search"
+				value={searchQuery}
+				onChange={(e) => setSearchQuery(e.target.value)}
 				style={{
 					maxHeight: '100%',
 					flex: 1,
 					border: 'none',
+					borderRadius: 4,
 				}}
-				value={searchQuery}
-				onChange={(e) => setSearchQuery(e.target.value)}
 			/>
 		</div>
 	)
