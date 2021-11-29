@@ -1,6 +1,6 @@
 import { EditableFeature, FeatureGeometry } from '../features'
 import { Layer, useLayers } from '../state/Layer'
-import { useLayerState, useUpdateFeature } from '../state/LayerState'
+import { useLayerState } from '../state/LayerState'
 import { EditorCreator } from './EditorCreator'
 import LeafMap, { LeafMapProps } from './LeafMap'
 
@@ -23,7 +23,6 @@ export function MapLayer(props: { layer: Layer }) {
 
 	const [layerState] = useLayerState(layer.url)
 
-	const updateFeature = useUpdateFeature(layer.url)
 	if (!layerState) return null
 
 	// TODO perf: use recoil selector
@@ -35,9 +34,9 @@ export function MapLayer(props: { layer: Layer }) {
 				const geometry = feature.data as FeatureGeometry // TODO
 				return (
 					<EditableFeature
+						layerUrl={layer.url}
 						featureId={feature.id}
 						geometry={geometry}
-						updateFeature={updateFeature}
 						key={feature.id}
 					/>
 				)
