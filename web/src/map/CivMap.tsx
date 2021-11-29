@@ -26,6 +26,7 @@ export function MapLayer(props: { layer: Layer }) {
 	const [layerState] = useLayerState(layer.url)
 
 	const updateFeature = useUpdateFeature(layer.url)
+	if (!layerState) return null
 
 	// TODO perf: use recoil selector
 	const features = Object.values(layerState.featuresById)
