@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
 	BrowserRouter as Router,
 	Link,
@@ -11,10 +12,13 @@ import { CreateFeatureMenuItem } from './components/CreateFeatureMenu'
 import { Omnibox } from './components/Omnibox'
 import { DiscordUserIcon } from './LoginMenu'
 import { CivMap } from './map/CivMap'
+import { Feature } from './state/Feature'
 import { useLayerConfig, useLayerConfigs } from './state/Layer'
 import {
+	useDeleteFeature,
 	useFeatureInLayer,
 	useLayerState,
+	useUpdateFeature,
 } from './state/LayerState'
 
 export function App() {
@@ -64,9 +68,34 @@ function HomePage() {
 
 function SearchPage() {
 	const { query } = useParams()
+	const features: { layerUrl: string; feature: Feature }[] = [] // TODO search
 	return (
 		<Float>
-			<div style={{ padding: '8px 16px' }}>Search {query}</div>
+			<div style={{ padding: '8px 16px' }}>Results for: {query}</div>
+			{!features.length && (
+				<div
+					style={{
+						padding: 8,
+						paddingLeft: 16,
+						textAlign: 'center',
+						opacity: 0.5,
+					}}
+				>
+					No results.
+				</div>
+			)}
+			<FeaturesSelectList
+				features={features}
+				fmtRow={(feature) => (
+					<>
+						[Feature name]
+						<br />
+						<span style={{ fontSize: '.5em', opacity: 0.5 }}>
+							in [layerUrl]
+						</span>
+					</>
+				)}
+			/>
 		</Float>
 	)
 }
@@ -112,8 +141,8 @@ function LayersPage() {
 }
 
 function LayerPage() {
-	const { layerSlug } = useParams()
 	const navigate = useNavigate()
+	const { layerSlug } = useParams()
 	const layerUrl = layerUrlFromSlug(layerSlug!)
 	const [layerConfig, setLayerConfig] = useLayerConfig(layerUrl)
 	const [layerState] = useLayerState(layerUrl)
@@ -161,14 +190,22 @@ function LayerFeaturesPage() {
 		<Float>
 			<div style={{ padding: '8px 16px' }}>Features in Layer {layerUrl}</div>
 			<CreateFeatureMenuItem layerUrl={layerUrl} />
-			{features.map((f) => (
-				<Link
-					to={`/layer/${layerSlug}/feature/${f.id}`}
-					style={{ padding: '8px 16px' }}
+			{!features.length && (
+				<div
+					style={{
+						padding: 8,
+						paddingLeft: 16,
+						textAlign: 'center',
+						opacity: 0.5,
+					}}
 				>
-					{JSON.stringify(f.data)}
-				</Link>
-			))}
+					No features in this layer.
+				</div>
+			)}
+			<FeaturesSelectList
+				features={features.map((feature) => ({ feature, layerUrl }))}
+				fmtRow={(feature) => <>[Feature name]</>}
+			/>
 		</Float>
 	)
 }
@@ -182,14 +219,17 @@ function FeatureInfoPage() {
 			<Float>
 				<div style={{ padding: '8px 16px' }}>Feature not loaded</div>
 				<Link to={`/layer/${layerSlug}`} style={{ padding: '8px 16px' }}>
-					go to Layer {layerUrl}
+					Go to Layer {layerUrl}
 				</Link>
 			</Float>
 		)
 	}
 	return (
 		<Float>
-			<div style={{ padding: '8px 16px' }}>Feature</div>
+			<div style={{ padding: '8px 16px' }}>Feature [name]</div>
+			<button onClick={() => 0 /* TODO */} style={{ padding: '8px 16px' }}>
+				Show on map
+			</button>
 			<Link to={`/layer/${layerSlug}`} style={{ padding: '8px 16px' }}>
 				in Layer {layerUrl}
 			</Link>
@@ -205,12 +245,52 @@ function FeatureInfoPage() {
 }
 
 function FeatureEditPage() {
+	const navigate = useNavigate()
 	const { layerSlug, featureId } = useParams()
 	const layerUrl = layerUrlFromSlug(layerSlug!)
+	const [feature] = useFeatureInLayer(layerUrl, featureId!)
+	const updateFeature = useUpdateFeature(layerUrl)
+	const deleteFeature = useDeleteFeature(layerUrl)
+
+	if (false) updateFeature(feature!) // XXX use in Data Editor
+
+	if (!feature) {
+		return (
+			<Float>
+				<div style={{ padding: '8px 16px' }}>Feature not loaded</div>
+				<Link to={`/layer/${layerSlug}`} style={{ padding: '8px 16px' }}>
+					Go to Layer {layerUrl}
+				</Link>
+			</Float>
+		)
+	}
 	return (
 		<Float>
+			<div style={{ display: 'flex', flexDirection: 'row' }}>
+				<div style={{ padding: '8px 16px', flex: 1 }}>Editing Feature</div>
+				<Link
+					to={`/layer/${layerSlug}/feature/${feature.id}`}
+					style={{ padding: '8px 16px' }}
+				>
+					Stop editing
+				</Link>
+			</div>
+			<button onClick={() => 0 /* TODO */} style={{ padding: '8px 16px' }}>
+				Move/Clone to other Layer
+			</button>
+			<button
+				onClick={() => {
+					const ok = window.confirm(`Delete feature?`)
+					if (!ok) return
+					deleteFeature(feature)
+					navigate(`/layer/${layerSlug}/features`)
+				}}
+				style={{ padding: '8px 16px' }}
+			>
+				Delete feature
+			</button>
 			<div style={{ padding: '8px 16px' }}>
-				FeatureEdit {layerUrl} {featureId}
+				Data Editor Here {JSON.stringify(feature.data)}
 			</div>
 		</Float>
 	)
@@ -246,5 +326,74 @@ function Float(props: { children?: React.ReactNode }) {
 		>
 			{props.children}
 		</div>
+	)
+}
+
+function FeaturesSelectList(props: {
+	features: { layerUrl: string; feature: Feature }[]
+	fmtRow: (f: Feature, layerUrl: string) => React.ReactElement
+}) {
+	const { features, fmtRow } = props
+	const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
+	return (
+		<>
+			{features.map(({ layerUrl, feature }) => (
+				<div style={{ display: 'flex', flexDirection: 'row' }}>
+					<button
+						onClick={() => {
+							if (selectedFeatures.includes(feature.id)) {
+								setSelectedFeatures((sel) =>
+									sel.filter((id) => id !== feature.id)
+								)
+							} else {
+								setSelectedFeatures((sel) => [...sel, feature.id])
+							}
+						}}
+						title="Select"
+						style={{ padding: 8 }}
+					>
+						{selectedFeatures.includes(feature.id) ? '[x]' : '[ ]'}
+					</button>
+					<Link
+						to={`/layer/${layerSlugFromUrl(layerUrl)}/feature/${feature.id}`}
+						style={{ padding: 8, paddingLeft: 16, flex: 1 }}
+					>
+						{fmtRow(feature, layerUrl)}
+					</Link>
+					<button
+						onClick={() => 0 /* TODO */}
+						title="Show on map"
+						style={{ padding: 8 }}
+					>
+						:show:
+					</button>
+				</div>
+			))}
+			{selectedFeatures.length > 0 && (
+				<div
+					style={{
+						display: 'flex',
+						flexDirection: 'row',
+						alignItems: 'center',
+					}}
+				>
+					<span style={{ padding: 8, paddingLeft: 16 }}>
+						Selected {selectedFeatures.length}:
+					</span>
+					<button
+						onClick={() => 0 /* TODO */}
+						style={{ padding: '8px 16px', flex: 1 }}
+					>
+						Move/Clone
+					</button>
+					<button
+						onClick={() => 0 /* TODO */}
+						style={{ padding: '8px 16px', flex: 1 }}
+					>
+						Delete
+					</button>
+				</div>
+			)}
+		</>
 	)
 }
