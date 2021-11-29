@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
 	BrowserRouter as Router,
 	Route,
@@ -56,6 +57,7 @@ export function App() {
 					}}
 				/>
 			</Router>
+			<BetaOverlay />
 		</div>
 	)
 }
@@ -84,16 +86,52 @@ export function SearchPage() {
 			)}
 			<FeaturesSelectList
 				features={features}
-				fmtRow={(feature) => (
+				fmtRow={(feature, layerUrl) => (
 					<>
 						[Feature name]
 						<br />
-						<span style={{ fontSize: '.5em', opacity: 0.5 }}>
-							in [layerUrl]
+						<span
+							style={{ paddingLeft: '1em', fontSize: '.5em', opacity: 0.5 }}
+						>
+							in {layerUrl}
 						</span>
 					</>
 				)}
 			/>
 		</Float>
+	)
+}
+
+function BetaOverlay() {
+	const [closed, setClosed] = useState(false)
+	if (closed) return null
+	return (
+		<div
+			style={{
+				zIndex: 99999,
+				position: 'absolute',
+				top: 0,
+				right: 0,
+				bottom: 0,
+				left: 0,
+				padding: '1em',
+				display: 'flex',
+				justifyContent: 'center',
+				alignItems: 'center',
+				backgroundColor: 'rgba(0,0,0, 0.5)',
+			}}
+		>
+			<div style={{ maxWidth: 400, padding: '2em', backgroundColor: 'white' }}>
+				<h2>This is an early work-in-progress.</h2>
+				<p>
+					{' '}
+					Things look bad, have bugs, and might destroy/publish/corrupt your
+					data if you input it.
+				</p>
+				<button autoFocus onClick={() => setClosed(true)}>
+					I will not use it for anything important
+				</button>
+			</div>
+		</div>
 	)
 }
