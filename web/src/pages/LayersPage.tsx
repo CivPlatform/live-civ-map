@@ -12,7 +12,7 @@ export function LayersPage() {
 			<button
 				onClick={() => {
 					const url = prompt('Enter Layer URL')
-					if (!url?.match(/^https?:\/\/.+\..+/)) {
+					if (!url?.match(/^wss?:\/\/.+\..+/)) {
 						alert('Invalid URL. No layer created.')
 					} else if (layerConfigs.find((l) => l.url === url)) {
 						alert('Layer is already on the map.')
@@ -23,7 +23,7 @@ export function LayersPage() {
 				}}
 				style={{ padding: '8px 16px' }}
 			>
-				Create from URL...
+				Import Layer from URL ...
 			</button>
 			{layerConfigs.map(({ url }) => (
 				<div style={{ display: 'flex', flexDirection: 'row' }}>
