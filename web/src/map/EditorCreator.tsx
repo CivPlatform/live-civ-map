@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import { atom, useRecoilState } from 'recoil'
-import { Layer } from '../state/Layer'
 import { useCreateFeature, useUpdateFeature } from '../state/LayerState'
 import { Bounds, xzFromLatLng } from './spatial'
 
@@ -13,19 +12,28 @@ export type CreatedFeatureType =
 	| 'rectangle'
 	| 'map_image'
 
-export const createdFeatureTypeRecoil = atom<CreatedFeatureType | null>({
+export interface CreatedFeatureInfo {
+	type: CreatedFeatureType
+	layerUrl: string
+}
+
+const createdFeatureInfoRecoil = atom<CreatedFeatureInfo | null>({
 	key: 'createdFeature',
 	default: null,
 })
 
-export function EditorCreator(props: { layer: Layer }) {
-	const [createdFeatureType, setCreatedFeatureType] = useRecoilState(
-		createdFeatureTypeRecoil
-	)
+export function useCreatedFeatureInfo() {
+	return useRecoilState(createdFeatureInfoRecoil)
+}
 
-	const createFeature = useCreateFeature(props.layer.url)
+export function EditorCreator() {
+	const [createdFeatureInfo, setCreatedFeatureInfo] = useCreatedFeatureInfo()
 
-	const updateFeature = useUpdateFeature(props.layer.url)
+	const { type: createdFeatureType, layerUrl } = createdFeatureInfo || {}
+
+	const createFeature = useCreateFeature(layerUrl)
+
+	const updateFeature = useUpdateFeature(layerUrl)
 
 	const map = useMap()
 
@@ -36,7 +44,7 @@ export function EditorCreator(props: { layer: Layer }) {
 				tempMarker.on('editable:drawing:commit', () => {
 					const [x, z] = xzFromLatLng(tempMarker.getLatLng())
 					createFeature({ data: { x, z } })
-					setCreatedFeatureType(null)
+					setCreatedFeatureInfo(null)
 				})
 				return () => {
 					tempMarker.remove()
@@ -57,7 +65,7 @@ export function EditorCreator(props: { layer: Layer }) {
 					}
 				})
 				tempLine.on('editable:drawing:commit', () => {
-					setCreatedFeatureType(null)
+					setCreatedFeatureInfo(null)
 				})
 				return () => {
 					tempLine.remove()
@@ -78,7 +86,7 @@ export function EditorCreator(props: { layer: Layer }) {
 					}
 				})
 				tempPoly.on('editable:drawing:commit', () => {
-					setCreatedFeatureType(null)
+					setCreatedFeatureInfo(null)
 				})
 				return () => {
 					tempPoly.remove()
@@ -93,7 +101,7 @@ export function EditorCreator(props: { layer: Layer }) {
 						[llbounds.getEast(), llbounds.getNorth()],
 					]
 					createFeature({ data: { rectangle } })
-					setCreatedFeatureType(null)
+					setCreatedFeatureInfo(null)
 				})
 				return () => {
 					tempRect.remove()
@@ -113,7 +121,7 @@ export function EditorCreator(props: { layer: Layer }) {
 					} else {
 						alert('Invalid image url. No overlay created.')
 					}
-					setCreatedFeatureType(null)
+					setCreatedFeatureInfo(null)
 				})
 				return () => {
 					tempRect.remove()
@@ -125,7 +133,7 @@ export function EditorCreator(props: { layer: Layer }) {
 		createFeature,
 		updateFeature,
 		createdFeatureType,
-		setCreatedFeatureType,
+		setCreatedFeatureInfo,
 	])
 
 	return null

@@ -177,41 +177,41 @@ function Panel(props: { children?: React.ReactNode }) {
 	)
 }
 
-function Menu() {
-	const setCreatedFeatureType = useSetRecoilState(createdFeatureTypeRecoil)
+function CreateFeatureMenuItems(props: { layerUrl: string }) {
+	const { layerUrl } = props
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [_createdFeatureInfo, setCreatedFeatureInfo] = useCreatedFeatureInfo()
 
 	return (
-		<div className="App-Menu" style={{ zIndex: 1000 }}>
-			<div>
-				<span style={{ textAlign: 'center' }}>{':)'}</span>
-				<span>Menu</span>
-			</div>
-			<div onClick={() => setCreatedFeatureType('marker')}>
-				<span style={{ textAlign: 'center' }}>+</span>
+		<div>
+			<div onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'marker' })}>
+				<span>+</span>
 				<span>Create Marker</span>
 			</div>
-			<div onClick={() => setCreatedFeatureType('line')}>
-				<span style={{ textAlign: 'center' }}>+</span>
+			<div onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'line' })}>
+				<span>+</span>
 				<span>Create Line</span>
 			</div>
-			<div onClick={() => setCreatedFeatureType('polygon')}>
-				<span style={{ textAlign: 'center' }}>+</span>
+			<div onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'polygon' })}>
+				<span>+</span>
 				<span>Create Polygon</span>
 			</div>
-			<div onClick={() => setCreatedFeatureType('rectangle')}>
-				<span style={{ textAlign: 'center' }}>+</span>
+			<div
+				onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'rectangle' })}
+			>
+				<span>+</span>
 				<span>Create Rectangle</span>
 			</div>
-			<div onClick={() => setCreatedFeatureType('map_image')}>
-				<span style={{ textAlign: 'center' }}>+</span>
+			<div
+				onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'map_image' })}
+			>
+				<span>+</span>
 				<span>Overlay Image on Map</span>
 			</div>
 			<div style={{ opacity: 0.5 }}>
-				<span style={{ textAlign: 'center' }}>+</span>
+				<span>+</span>
 				<span>Create Circle</span>
 			</div>
-			{/* <div className="App-Menu-Spacer" style={{ flex: 1, minHeight: '1em' }} /> */}
-			<DiscordUserRow />
 		</div>
 	)
 }
