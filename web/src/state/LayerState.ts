@@ -19,6 +19,14 @@ export function useLayerState(url: string | undefined | null) {
 	return useRecoilState(layerStateRecoil([url, token]))
 }
 
+export function useFeatureInLayer(
+	layerUrl: string,
+	featureId: string
+): [Feature | undefined] {
+	const [layerState] = useLayerState(layerUrl)
+	return [layerState?.featuresById?.[featureId]]
+}
+
 export const makeFeatureId = () => randomUUID()
 
 export type FeatureCreateDTO = Omit<

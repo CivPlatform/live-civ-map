@@ -3,33 +3,6 @@
 }
 
 .App-Map {
-	background-color: skyblue;
 	width: 100%;
 	height: 100%;
-}
-
-.App-Menu {
-	position: absolute;
-	top: 0;
-	left: 0;
-	max-width: 300px;
-	min-width: 300px;
-	display: flex;
-	flex-direction: column;
-	background-color: lavenderblush;
-}
-
-.App-Menu > * {
-	max-height: 32px;
-	min-height: 32px;
-	overflow: hidden;
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-}
-
-.App-Menu > * > :first-child {
-	max-width: 32px;
-	min-width: 32px;
-	overflow: hidden;
 }

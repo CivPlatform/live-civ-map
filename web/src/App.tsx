@@ -3,15 +3,19 @@ import {
 	Link,
 	Route,
 	Routes,
+	useNavigate,
 	useParams,
 } from 'react-router-dom'
-import { useSetRecoilState } from 'recoil'
 import './App.css'
+import { CreateFeatureMenuItem } from './components/CreateFeatureMenu'
 import { Omnibox } from './components/Omnibox'
-import { DiscordUserIcon, DiscordUserRow } from './LoginMenu'
+import { DiscordUserIcon } from './LoginMenu'
 import { CivMap } from './map/CivMap'
-import { createdFeatureTypeRecoil } from './map/EditorCreator'
-import { useLayers } from './state/Layer'
+import { useLayerConfig, useLayerConfigs } from './state/Layer'
+import {
+	useFeatureInLayer,
+	useLayerState,
+} from './state/LayerState'
 
 export function App() {
 	return (
@@ -61,75 +65,164 @@ function HomePage() {
 function SearchPage() {
 	const { query } = useParams()
 	return (
-		<Panel>
-			<div style={{ padding: 16 }}>Search {query}</div>
-		</Panel>
+		<Float>
+			<div style={{ padding: '8px 16px' }}>Search {query}</div>
+		</Float>
 	)
 }
 
 function LayersPage() {
-	const [layers] = useLayers()
+	const [layerConfigs, setLayerConfigs] = useLayerConfigs()
+	// TODO sorted by last used, constant order while tab open
 	return (
 		<Float>
 			<div style={{ padding: '8px 16px' }}>Layers</div>
-			{layers.map(({ url }) => {
-				return (
+			<button
+				onClick={() => {
+					const url = prompt('Enter Layer URL')
+					if (!url?.match(/^https?:\/\/.+\..+/)) {
+						alert('Invalid URL. No layer created.')
+					} else if (layerConfigs.find((l) => l.url === url)) {
+						alert('Layer is already on the map.')
+					} else {
+						const layerConfig = { url }
+						setLayerConfigs([layerConfig, ...layerConfigs])
+					}
+				}}
+				style={{ padding: '8px 16px' }}
+			>
+				Create from URL...
+			</button>
+			{layerConfigs.map(({ url }) => (
+				<div style={{ display: 'flex', flexDirection: 'row' }}>
 					<Link
-						style={{ padding: '8px 16px' }}
 						to={`/layer/${layerSlugFromUrl(url)}`}
+						style={{ padding: 8, paddingLeft: 16, flex: 1 }}
 					>
 						{layerSlugFromUrl(url)}
+						{/* TODO show name; if local alias is set, show local alias, and show name as small muted text */}
 					</Link>
-				)
-			})}
+					<button title="Toggle visible" style={{ padding: 8 }}>
+						:eye:
+					</button>
+				</div>
+			))}
 		</Float>
 	)
 }
 
 function LayerPage() {
 	const { layerSlug } = useParams()
+	const navigate = useNavigate()
+	const layerUrl = layerUrlFromSlug(layerSlug!)
+	const [layerConfig, setLayerConfig] = useLayerConfig(layerUrl)
+	const [layerState] = useLayerState(layerUrl)
+	// TODO handle layer not loaded
+	const numFeatures = Object.keys(layerState?.featuresById || {}).length
 	return (
 		<Float>
-			<div style={{ padding: 16 }}>Layer {layerSlug}</div>
+			<div style={{ padding: '8px 16px' }}>
+				Layer {layerUrl} {layerConfig.alias} [Rename]
+			</div>
+			<button
+				onClick={() =>
+					setLayerConfig({ ...layerConfig, hidden: !layerConfig.hidden })
+				}
+				style={{ padding: '8px 16px' }}
+			>
+				{layerConfig.hidden ? 'Show' : 'Hide'} Layer
+			</button>
+			<CreateFeatureMenuItem layerUrl={layerUrl} />
+			<Link to={`/layer/${layerSlug}/features`} style={{ padding: '8px 16px' }}>
+				Show all {numFeatures} features
+			</Link>
+			<button
+				onClick={() => {
+					const ok = window.confirm(`Delete layer? ${layerUrl}`)
+					if (!ok) return
+					setLayerConfig(null)
+					navigate(`/layers`)
+				}}
+				style={{ padding: '8px 16px' }}
+			>
+				Forget Layer
+			</button>
 		</Float>
 	)
 }
 
 function LayerFeaturesPage() {
 	const { layerSlug } = useParams()
+	const layerUrl = layerUrlFromSlug(layerSlug!)
+	const [layerState] = useLayerState(layerUrl)
+	// TODO handle layer not loaded
+	const features = Object.values(layerState?.featuresById || {})
 	return (
 		<Float>
-			<div style={{ padding: 16 }}>LayerFeatures {layerSlug}</div>
+			<div style={{ padding: '8px 16px' }}>Features in Layer {layerUrl}</div>
+			<CreateFeatureMenuItem layerUrl={layerUrl} />
+			{features.map((f) => (
+				<Link
+					to={`/layer/${layerSlug}/feature/${f.id}`}
+					style={{ padding: '8px 16px' }}
+				>
+					{JSON.stringify(f.data)}
+				</Link>
+			))}
 		</Float>
 	)
 }
 
 function FeatureInfoPage() {
 	const { layerSlug, featureId } = useParams()
+	const layerUrl = layerUrlFromSlug(layerSlug!)
+	const [feature] = useFeatureInLayer(layerUrl, featureId!)
+	if (!feature) {
+		return (
+			<Float>
+				<div style={{ padding: '8px 16px' }}>Feature not loaded</div>
+				<Link to={`/layer/${layerSlug}`} style={{ padding: '8px 16px' }}>
+					go to Layer {layerUrl}
+				</Link>
+			</Float>
+		)
+	}
 	return (
 		<Float>
-			<div style={{ padding: 16 }}>
-				FeatureInfo {layerSlug} {featureId}
-			</div>
+			<div style={{ padding: '8px 16px' }}>Feature</div>
+			<Link to={`/layer/${layerSlug}`} style={{ padding: '8px 16px' }}>
+				in Layer {layerUrl}
+			</Link>
+			<Link
+				to={`/layer/${layerSlug}/feature/${featureId}/edit`}
+				style={{ padding: '8px 16px' }}
+			>
+				Edit
+			</Link>
+			<div style={{ padding: '8px 16px' }}>{JSON.stringify(feature.data)}</div>
 		</Float>
 	)
 }
 
 function FeatureEditPage() {
 	const { layerSlug, featureId } = useParams()
+	const layerUrl = layerUrlFromSlug(layerSlug!)
 	return (
 		<Float>
-			<div style={{ padding: 16 }}>
-				FeatureEdit {layerSlug} {featureId}
+			<div style={{ padding: '8px 16px' }}>
+				FeatureEdit {layerUrl} {featureId}
 			</div>
 		</Float>
 	)
 }
 
 const layerSlugFromUrl = (url: string) =>
-	url.replace(/^wss:\/\//, '').replaceAll('/', '_')
+	url
+		.replace(/^wss:\/\//, '')
+		.replaceAll('/', '_')
+		.replace(/[?#].*/, '')
 const layerUrlFromSlug = (slug: string) =>
-	slug.includes('://') ? slug : 'wss://' + slug
+	(slug.includes(':__') ? slug : 'wss://' + slug).replaceAll('_', '/')
 
 /** below omnibar. vertical */
 function Float(props: { children?: React.ReactNode }) {
@@ -152,66 +245,6 @@ function Float(props: { children?: React.ReactNode }) {
 			}}
 		>
 			{props.children}
-		</div>
-	)
-}
-
-function Panel(props: { children?: React.ReactNode }) {
-	return (
-		<div
-			style={{
-				zIndex: 1000,
-				position: 'absolute',
-				left: 0,
-				top: 0,
-				paddingTop: 48,
-				maxWidth: 300,
-				minWidth: 300,
-				display: 'flex',
-				flexDirection: 'column',
-				backgroundColor: 'white',
-			}}
-		>
-			{props.children}
-		</div>
-	)
-}
-
-function CreateFeatureMenuItems(props: { layerUrl: string }) {
-	const { layerUrl } = props
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const [_createdFeatureInfo, setCreatedFeatureInfo] = useCreatedFeatureInfo()
-
-	return (
-		<div>
-			<div onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'marker' })}>
-				<span>+</span>
-				<span>Create Marker</span>
-			</div>
-			<div onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'line' })}>
-				<span>+</span>
-				<span>Create Line</span>
-			</div>
-			<div onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'polygon' })}>
-				<span>+</span>
-				<span>Create Polygon</span>
-			</div>
-			<div
-				onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'rectangle' })}
-			>
-				<span>+</span>
-				<span>Create Rectangle</span>
-			</div>
-			<div
-				onClick={() => setCreatedFeatureInfo({ layerUrl, type: 'map_image' })}
-			>
-				<span>+</span>
-				<span>Overlay Image on Map</span>
-			</div>
-			<div style={{ opacity: 0.5 }}>
-				<span>+</span>
-				<span>Create Circle</span>
-			</div>
 		</div>
 	)
 }

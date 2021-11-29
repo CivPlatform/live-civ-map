@@ -1,11 +1,11 @@
 import { EditableFeature, FeatureGeometry } from '../features'
-import { Layer, useLayers } from '../state/Layer'
+import { LayerConfig, useLayerConfigs } from '../state/Layer'
 import { useLayerState } from '../state/LayerState'
 import { EditorCreator } from './EditorCreator'
 import LeafMap, { LeafMapProps } from './LeafMap'
 
 export function CivMap(props: LeafMapProps) {
-	const [layers] = useLayers()
+	const [layers] = useLayerConfigs()
 
 	return (
 		<LeafMap {...props}>
@@ -18,7 +18,7 @@ export function CivMap(props: LeafMapProps) {
 	)
 }
 
-export function MapLayer(props: { layer: Layer }) {
+export function MapLayer(props: { layer: LayerConfig }) {
 	const { layer } = props
 
 	const [layerState] = useLayerState(layer.url)

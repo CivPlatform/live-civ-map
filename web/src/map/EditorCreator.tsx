@@ -119,7 +119,7 @@ export function EditorCreator() {
 					if (url?.match(/^https?:\/\/.+\..+/)) {
 						createFeature({ data: { map_image: { bounds, url } } })
 					} else {
-						alert('Invalid image url. No overlay created.')
+						alert('Invalid image URL. No overlay created.')
 					}
 					setCreatedFeatureInfo(null)
 				})
