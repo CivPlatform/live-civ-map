@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router'
+import { useSearchQuery } from '../state/Search'
 
 export function Omnibox() {
-	const navigate = useNavigate()
+	const [searchQuery, setSearchQuery] = useSearchQuery()
 	return (
 		<div
 			style={{
@@ -29,8 +29,9 @@ export function Omnibox() {
 					backgroundColor: 'white',
 					cursor: 'pointer',
 				}}
+				title="Menu"
 			>
-				M
+				=
 			</button>
 			<input
 				type="search"
@@ -40,7 +41,8 @@ export function Omnibox() {
 					flex: 1,
 					border: 'none',
 				}}
-				onChange={(e) => navigate(`/search/${e.target.value}`)}
+				value={searchQuery}
+				onChange={(e) => setSearchQuery(e.target.value)}
 			/>
 		</div>
 	)
