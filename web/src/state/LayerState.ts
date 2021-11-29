@@ -65,7 +65,7 @@ export function useCreateFeature(layerUrl: string | undefined | null) {
 					data: featurePartial.data || {},
 				}
 				console.log('creating feature', feature)
-				return setFeatureInLayerObjct(layerState, feature)
+				return setFeatureInLayerObject(layerState, feature)
 			})
 			return id
 		},
@@ -95,14 +95,30 @@ export function useUpdateFeature(layerUrl: string | undefined | null) {
 					data: { ...existing.data, ...featurePartial.data },
 				}
 				console.log('updating feature', feature)
-				return setFeatureInLayerObjct(layerState, feature)
+				return setFeatureInLayerObject(layerState, feature)
 			})
 		},
 		[profile, setLayerState]
 	)
 }
 
-function setFeatureInLayerObjct(layer: LayerState, feature: Feature) {
+export function useDeleteFeature(layerUrl: string | undefined | null) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [_layerState, setLayerState] = useLayerState(layerUrl)
+
+	return useCallback(
+		(feature: FeatureDeleteDTO) => {
+			setLayerState((layerState) => {
+				if (!layerState) return layerState
+				console.log('deleting feature', feature)
+				return deleteFeatureInLayerObject(layerState, feature)
+			})
+		},
+		[setLayerState]
+	)
+}
+
+function setFeatureInLayerObject(layer: LayerState, feature: Feature) {
 	const featuresById = {
 		...layer.featuresById,
 		[feature.id]: feature,
@@ -139,7 +155,7 @@ export const layerStateRecoil = atomFamily<
 					switch (msg.type) {
 						case 'feature:update': {
 							setSelf(
-								(layerCurrent = setFeatureInLayerObjct(
+								(layerCurrent = setFeatureInLayerObject(
 									layerCurrent,
 									msg.feature
 								))
