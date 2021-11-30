@@ -9,9 +9,11 @@ export function CivMap(props: LeafMapProps) {
 
 	return (
 		<LeafMap {...props}>
-			{layers.map((l) => (
-				<MapLayer layer={l} key={l.url} />
-			))}
+			{layers
+				.filter((l) => !l.hidden)
+				.map((l) => (
+					<MapLayer layer={l} key={l.url} />
+				))}
 			<EditorCreator />
 			{props.children}
 		</LeafMap>

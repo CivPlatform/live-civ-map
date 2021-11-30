@@ -25,17 +25,29 @@ export function LayersPage() {
 			>
 				Import Layer from URL ...
 			</button>
-			{layerConfigs.map(({ url }) => (
+			{layerConfigs.map((layerConfig) => (
 				<div style={{ display: 'flex', flexDirection: 'row' }}>
 					<Link
-						to={`/layer/${layerSlugFromUrl(url)}`}
+						to={`/layer/${layerSlugFromUrl(layerConfig.url)}`}
 						style={{ padding: 8, paddingLeft: 16, flex: 1 }}
 					>
-						{layerSlugFromUrl(url)}
+						{layerSlugFromUrl(layerConfig.url)}
 						{/* TODO show name; if local alias is set, show local alias, and show name as small muted text */}
 					</Link>
-					<button title="Toggle visible" style={{ padding: 8 }}>
-						:eye:
+					<button
+						title="Toggle visible"
+						onClick={() => {
+							setLayerConfigs(
+								layerConfigs.map((lc) =>
+									lc.url === layerConfig.url
+										? { ...lc, hidden: !lc.hidden }
+										: lc
+								)
+							)
+						}}
+						style={{ padding: 8 }}
+					>
+						{layerConfig.hidden ? 'show' : 'hide'}
 					</button>
 				</div>
 			))}
