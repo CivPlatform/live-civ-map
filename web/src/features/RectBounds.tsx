@@ -36,6 +36,7 @@ export function EditableRectBounds(
 			ref={(r) => setEditable(r, updateFeature)}
 			eventHandlers={{
 				'editable:vertex:dragend': editHandler,
+				click: props.onClick,
 			}}
 		>
 			{children}

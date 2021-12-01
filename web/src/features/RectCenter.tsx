@@ -39,6 +39,7 @@ export function EditableRectCenter(
 			ref={(r) => setEditable(r, updateFeature)}
 			eventHandlers={{
 				'editable:vertex:dragend': editHandler,
+				click: props.onClick,
 			}}
 		>
 			{children}

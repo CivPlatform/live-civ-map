@@ -31,6 +31,7 @@ export function EditablePolygon(props: EditableFeatureProps<PolygonsGeometry>) {
 				'editable:drawing:clicked': editHandler,
 				'editable:vertex:dragend': editHandler,
 				'editable:vertex:deleted': editHandler,
+				click: props.onClick,
 			}}
 		>
 			{children}
