@@ -1,8 +1,10 @@
-export const layerSlugFromUrl = (url: string) =>
-	url
-		.replace(/^wss:\/\//, '')
-		.replaceAll('/', '_') // XXX this is destructive; how else can we escape slashes?
-		.replace(/[?#].*/, '')
+export function layerSlugFromUrl(url: string) {
+	url = url.replace(/^wss?:\/\//, '')
+	return encodeURIComponent(url)
+}
 
-export const layerUrlFromSlug = (slug: string) =>
-	(slug.includes(':__') ? slug : 'wss://' + slug).replaceAll('_', '/')
+export function layerUrlFromSlug(slug: string) {
+	slug = decodeURIComponent(slug)
+	slug = slug.match(/^localhost[:/].*/) ? 'ws://' + slug : 'wss://' + slug
+	return slug
+}

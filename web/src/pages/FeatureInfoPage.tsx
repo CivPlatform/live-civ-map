@@ -6,7 +6,7 @@ import { useFeatureInLayer } from '../state/LayerState'
 export function FeatureInfoPage() {
 	const { layerSlug, featureId } = useParams()
 	const layerUrl = layerUrlFromSlug(layerSlug!)
-	const [feature] = useFeatureInLayer(layerUrl, featureId!)
+	const { feature } = useFeatureInLayer(layerUrl, featureId!)
 	if (!feature) {
 		return (
 			<Float>

@@ -26,12 +26,15 @@ export function LayersPage() {
 				Import Layer from URL ...
 			</button>
 			{layerConfigs.map((layerConfig) => (
-				<div style={{ display: 'flex', flexDirection: 'row' }}>
+				<div
+					style={{ display: 'flex', flexDirection: 'row' }}
+					key={layerConfig.url}
+				>
 					<Link
 						to={`/layer/${layerSlugFromUrl(layerConfig.url)}`}
 						style={{ padding: 8, paddingLeft: 16, flex: 1 }}
 					>
-						{layerSlugFromUrl(layerConfig.url)}
+						{layerConfig.url}
 						{/* TODO show name; if local alias is set, show local alias, and show name as small muted text */}
 					</Link>
 					<button
