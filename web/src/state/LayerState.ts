@@ -186,12 +186,18 @@ export const layerStateRecoil = atomFamily<
 
 			onSet((layerNew) => {
 				layerNew = layerNew || { url, featuresById: {} }
+				// detect created/updated
 				Object.values(layerNew.featuresById)
 					.filter((f) => layerCurrent.featuresById[f.id] !== f)
 					.forEach((feature) => {
 						wsc.send({ type: 'feature:update', feature })
 					})
-				// TODO delete features in old that are missing from new
+				// detect deleted
+				Object.values(layerCurrent.featuresById)
+					.filter((f) => !layerNew!.featuresById[f.id])
+					.forEach((feature) => {
+						wsc.send({ type: 'feature:delete', feature })
+					})
 				layerCurrent = layerNew
 			})
 
