@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
+import { useNavigate } from 'react-router'
 import { atom, useRecoilState } from 'recoil'
+import { layerSlugFromUrl } from '../pages'
 import { useCreateFeature, useUpdateFeature } from '../state/LayerState'
 import { Bounds, xzFromLatLng } from './spatial'
 
@@ -27,6 +29,8 @@ export function useCreatedFeatureInfo() {
 }
 
 export function EditorCreator() {
+	const navigate = useNavigate()
+
 	const [createdFeatureInfo, setCreatedFeatureInfo] = useCreatedFeatureInfo()
 
 	const { type: createdFeatureType, layerUrl } = createdFeatureInfo || {}
@@ -38,13 +42,15 @@ export function EditorCreator() {
 	const map = useMap()
 
 	useEffect(() => {
+		const layerSlug = layerSlugFromUrl(layerUrl || '')
 		switch (createdFeatureType) {
 			case 'marker': {
 				const tempMarker = map.editTools.startMarker()
 				tempMarker.on('editable:drawing:commit', () => {
 					const [x, z] = xzFromLatLng(tempMarker.getLatLng())
-					createFeature({ data: { x, z } })
+					const id = createFeature({ data: { x, z } })
 					setCreatedFeatureInfo(null)
+					navigate(`/layer/${layerSlug}/feature/${id}/edit`)
 				})
 				return () => {
 					tempMarker.remove()
@@ -66,6 +72,7 @@ export function EditorCreator() {
 				})
 				tempLine.on('editable:drawing:commit', () => {
 					setCreatedFeatureInfo(null)
+					navigate(`/layer/${layerSlug}/feature/${id}/edit`)
 				})
 				return () => {
 					tempLine.remove()
@@ -87,6 +94,7 @@ export function EditorCreator() {
 				})
 				tempPoly.on('editable:drawing:commit', () => {
 					setCreatedFeatureInfo(null)
+					navigate(`/layer/${layerSlug}/feature/${id}/edit`)
 				})
 				return () => {
 					tempPoly.remove()
@@ -100,8 +108,9 @@ export function EditorCreator() {
 						[llbounds.getWest(), llbounds.getSouth()],
 						[llbounds.getEast(), llbounds.getNorth()],
 					]
-					createFeature({ data: { rectangle } })
+					const id = createFeature({ data: { rectangle } })
 					setCreatedFeatureInfo(null)
+					navigate(`/layer/${layerSlug}/feature/${id}/edit`)
 				})
 				return () => {
 					tempRect.remove()
@@ -117,7 +126,8 @@ export function EditorCreator() {
 					]
 					const url = prompt('Enter map image URL')
 					if (url?.match(/^https?:\/\/.+\..+/)) {
-						createFeature({ data: { map_image: { bounds, url } } })
+						const id = createFeature({ data: { map_image: { bounds, url } } })
+						navigate(`/layer/${layerSlug}/feature/${id}/edit`)
 					} else {
 						alert('Invalid image URL. No overlay created.')
 					}
@@ -129,11 +139,13 @@ export function EditorCreator() {
 			}
 		}
 	}, [
+		layerUrl,
 		map.editTools,
 		createFeature,
 		updateFeature,
 		createdFeatureType,
 		setCreatedFeatureInfo,
+		navigate,
 	])
 
 	return null
