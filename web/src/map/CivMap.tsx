@@ -6,6 +6,7 @@ import LeafMap, { LeafMapProps } from './LeafMap'
 
 export function CivMap(props: LeafMapProps) {
 	const [layers] = useLayerConfigs()
+	// TODO show temp layer from url
 
 	return (
 		<LeafMap {...props}>
