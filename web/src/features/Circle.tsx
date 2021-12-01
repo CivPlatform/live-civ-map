@@ -12,7 +12,13 @@ export function EditableCircle(props: EditableFeatureProps<CircleGeometry>) {
 	}
 
 	return (
-		<Circle radius={radius} center={[z, x]}>
+		<Circle
+			radius={radius}
+			center={[z, x]}
+			eventHandlers={{
+				click: props.onClick,
+			}}
+		>
 			{children}
 		</Circle>
 	)

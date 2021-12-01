@@ -21,6 +21,7 @@ export function EditableMarker(props: EditableFeatureProps<MarkerGeometry>) {
 					const data = { x, z }
 					updateFeature?.({ id: featureId, data })
 				},
+				click: props.onClick,
 			}}
 		>
 			{children}

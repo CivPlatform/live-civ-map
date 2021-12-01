@@ -1,3 +1,7 @@
+import { LeafletMouseEventHandlerFn } from 'leaflet'
+import { useCallback } from 'react'
+import { useMatch, useNavigate } from 'react-router'
+import { layerSlugFromUrl } from '../pages'
 import { Feature } from '../state/Feature'
 import { FeatureUpdateDTO, useUpdateFeature } from '../state/LayerState'
 import { CircleGeometry, EditableCircle } from './Circle'
@@ -22,6 +26,7 @@ export interface EditableFeatureProps<G extends FeatureGeometry> {
 	featureId: Feature['id']
 	geometry: G
 	updateFeature?: (f: FeatureUpdateDTO) => void
+	onClick?: LeafletMouseEventHandlerFn
 	children?: React.ReactNode
 }
 
@@ -33,7 +38,23 @@ export function EditableFeature(props: {
 }) {
 	const updateFeature = useUpdateFeature(props.layerUrl)
 
-	const fp = { ...props, updateFeature } // "feature props"
+	const navigate = useNavigate()
+
+	const routerMatchEdit = useMatch(
+		`/layer/${layerSlugFromUrl(props.layerUrl)}/feature/${props.featureId}/edit`
+	)
+
+	const onClick = useCallback(() => {
+		const layerSlug = layerSlugFromUrl(props.layerUrl)
+		const pathBase = `/layer/${layerSlug}/feature/${props.featureId}`
+		navigate(routerMatchEdit ? pathBase + '/edit' : pathBase)
+	}, [navigate, routerMatchEdit, props.layerUrl, props.featureId])
+
+	const fp: EditableFeatureProps<FeatureGeometry> = {
+		...props,
+		onClick,
+		updateFeature: routerMatchEdit ? updateFeature : undefined,
+	}
 
 	const { geometry: geom } = fp
 	// order matters: first matching determines display mode

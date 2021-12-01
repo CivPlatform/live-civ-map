@@ -16,7 +16,13 @@ export function EditableMapImage(
 	}
 
 	return (
-		<ImageOverlay url={url} bounds={deepFlip(bounds)}>
+		<ImageOverlay
+			url={url}
+			bounds={deepFlip(bounds)}
+			eventHandlers={{
+				click: props.onClick,
+			}}
+		>
 			{children}
 		</ImageOverlay>
 	)
