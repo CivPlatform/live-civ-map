@@ -1,10 +1,18 @@
+// We cannot use encodeURIComponent because of double decoding issues
+// (How is the browser/router supposed to know whether a URL has already been decoded?).
+// We assume there are no $ in the URL, which allows us to use that to encode slashes.
+// We also remove any leading wss protocol for nicer common URLs,
+// but leave ws (insecure) intact, which should only occur as a special case for development anyway.
+
 export function layerSlugFromUrl(url: string) {
-	url = url.replace(/^wss?:\/\//, '')
-	return encodeURIComponent(url)
+	return url
+		.replace(/^wss:\/\//, '')
+		.replaceAll('/', '$')
+		.replace(/[?#].*/, '')
 }
 
 export function layerUrlFromSlug(slug: string) {
-	slug = decodeURIComponent(slug)
-	slug = slug.match(/^localhost[:/].*/) ? 'ws://' + slug : 'wss://' + slug
+	slug = slug.replaceAll('$', '/')
+	slug = slug.match(/^wss?:\/\/.*/) ? slug : 'wss://' + slug
 	return slug
 }
