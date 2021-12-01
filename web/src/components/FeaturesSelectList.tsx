@@ -12,7 +12,7 @@ export function FeaturesSelectList(props: {
 	return (
 		<>
 			{features.map(({ layerUrl, feature }) => (
-				<div style={{ display: 'flex', flexDirection: 'row' }}>
+				<div style={{ display: 'flex', flexDirection: 'row' }} key={feature.id}>
 					<button
 						onClick={() => {
 							if (selectedFeatures.includes(feature.id)) {
