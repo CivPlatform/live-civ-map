@@ -8,4 +8,6 @@ export interface Feature {
 	last_edited_ts: number
 }
 
-export { useCreateFeature, useUpdateFeature } from './LayerState'
+export {
+	useFeatureInLayer,
+} from './LayerState'

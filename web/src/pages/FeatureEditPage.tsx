@@ -2,19 +2,16 @@ import { useNavigate, useParams } from 'react-router'
 import { Link } from 'react-router-dom'
 import { layerUrlFromSlug } from '.'
 import { Float } from '../components/Float'
-import {
-	useDeleteFeature,
-	useFeatureInLayer,
-	useUpdateFeature,
-} from '../state/LayerState'
+import { useFeatureInLayer } from '../state/Feature'
 
 export function FeatureEditPage() {
 	const navigate = useNavigate()
 	const { layerSlug, featureId } = useParams()
 	const layerUrl = layerUrlFromSlug(layerSlug!)
-	const [feature] = useFeatureInLayer(layerUrl, featureId!)
-	const updateFeature = useUpdateFeature(layerUrl)
-	const deleteFeature = useDeleteFeature(layerUrl)
+	const { feature, updateFeature, deleteFeature } = useFeatureInLayer(
+		layerUrl,
+		featureId!
+	)
 
 	if (false) updateFeature(feature!) // XXX use in Data Editor
 
@@ -46,7 +43,7 @@ export function FeatureEditPage() {
 				onClick={() => {
 					const ok = window.confirm(`Delete feature?`)
 					if (!ok) return
-					deleteFeature(feature)
+					deleteFeature()
 					navigate(`/layer/${layerSlug}/features`)
 				}}
 				style={{ padding: '8px 16px' }}

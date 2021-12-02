@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { atomFamily, useRecoilState } from 'recoil'
+import { atomFamily, useRecoilState, useSetRecoilState } from 'recoil'
 import { v4 as randomUUID } from 'uuid'
 import {
 	DiscordUser,
@@ -19,12 +19,35 @@ export function useLayerState(url: string | undefined | null) {
 	return useRecoilState(layerStateRecoil([url, token]))
 }
 
+export function useSetLayerState(url: string | undefined | null) {
+	const token = useDiscordToken()
+	return useSetRecoilState(layerStateRecoil([url, token]))
+}
+
 export function useFeatureInLayer(
 	layerUrl: string,
 	featureId: string
-): [Feature | undefined] {
+): {
+	feature: Feature | undefined
+	updateFeature: (f: FeatureUpdateDTO) => void
+	deleteFeature: () => void
+} {
 	const [layerState] = useLayerState(layerUrl)
-	return [layerState?.featuresById?.[featureId]]
+	const feature = layerState?.featuresById?.[featureId]
+
+	const updateFeatureInLayer = useUpdateFeature(layerUrl)
+	const updateFeature = useCallback(
+		(feature: FeatureUpdateDTO) => updateFeatureInLayer(feature),
+		[updateFeatureInLayer]
+	)
+
+	const deleteFeatureInLayer = useDeleteFeature(layerUrl)
+	const deleteFeature = useCallback(
+		() => deleteFeatureInLayer({ id: featureId }),
+		[deleteFeatureInLayer, featureId]
+	)
+
+	return { feature, updateFeature, deleteFeature }
 }
 
 export const makeFeatureId = () => randomUUID()
@@ -43,7 +66,7 @@ export type FeatureDeleteDTO = Pick<Feature, 'id'>
 
 export function useCreateFeature(layerUrl: string | undefined | null) {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const [_layerState, setLayerState] = useLayerState(layerUrl)
+	const setLayerState = useSetLayerState(layerUrl)
 
 	const profile = useDiscordProfile()
 
@@ -75,7 +98,7 @@ export function useCreateFeature(layerUrl: string | undefined | null) {
 
 export function useUpdateFeature(layerUrl: string | undefined | null) {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const [_layerState, setLayerState] = useLayerState(layerUrl)
+	const setLayerState = useSetLayerState(layerUrl)
 
 	const profile = useDiscordProfile()
 
@@ -104,7 +127,7 @@ export function useUpdateFeature(layerUrl: string | undefined | null) {
 
 export function useDeleteFeature(layerUrl: string | undefined | null) {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const [_layerState, setLayerState] = useLayerState(layerUrl)
+	const setLayerState = useSetLayerState(layerUrl)
 
 	return useCallback(
 		(feature: FeatureDeleteDTO) => {
