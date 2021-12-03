@@ -152,6 +152,7 @@ export async function fetchDiscordUserProfile(
 				Authorization: `Bearer ${token}`,
 				'User-Agent': `LiveCivMap-server (live-civ-map.netlify.app, v1.0.0)`,
 			},
+			mode: 'cors',
 		})
 		const { id, username, discriminator, avatar } =
 			(await res.json()) as DiscordUser
