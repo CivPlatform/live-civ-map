@@ -43,7 +43,7 @@ export class WSClient<WSServerMessage, WSClientMessage> {
 
 	send(msg: WSClientMessage) {
 		const msgStr = JSON.stringify(msg)
-		if (this.ws) {
+		if (this.ws && this.ws.readyState === WebSocket.OPEN) {
 			this.ws.send(msgStr)
 		} else if (!this.shouldClose) {
 			// TODO remember and resend
