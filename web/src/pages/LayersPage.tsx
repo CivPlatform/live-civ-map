@@ -1,10 +1,19 @@
 import { Link } from 'react-router-dom'
 import { layerSlugFromUrl } from '.'
 import { Float } from '../components/Float'
-import { useLayerConfigs } from '../state/Layer'
+import { LayerConfig, useLayerConfigs } from '../state/Layer'
 
 export function LayersPage() {
 	const [layerConfigs, setLayerConfigs] = useLayerConfigs()
+	const byServer: Record<string, LayerConfig[]> = {}
+	for (const lc of layerConfigs) {
+		const bs = byServer[lc.url] || (byServer[lc.url] = [])
+		bs.push(lc)
+	}
+	const servers = Object.values(byServer)
+	servers.sort((a, b) =>
+		a[0].url.toLowerCase().localeCompare(b[0].url.toLowerCase())
+	)
 	// TODO sorted by last used, constant order while tab open
 	return (
 		<Float>
@@ -25,33 +34,46 @@ export function LayersPage() {
 			>
 				Import Layer from URL ...
 			</button>
-			{layerConfigs.map((layerConfig) => (
-				<div
-					style={{ display: 'flex', flexDirection: 'row' }}
-					key={layerConfig.url}
-				>
-					<Link
-						to={`/layer/${layerSlugFromUrl(layerConfig.url)}`}
-						style={{ padding: 8, paddingLeft: 16, flex: 1 }}
+			{servers.map((layers) => (
+				<div>
+					<div
+						style={{ display: 'flex', flexDirection: 'row' }}
+						key={layers[0].url}
 					>
-						{layerConfig.url}
-						{/* TODO show name; if local alias is set, show local alias, and show name as small muted text */}
-					</Link>
-					<button
-						title="Toggle visible"
-						onClick={() => {
-							setLayerConfigs(
-								layerConfigs.map((lc) =>
-									lc.url === layerConfig.url
-										? { ...lc, hidden: !lc.hidden }
-										: lc
-								)
-							)
-						}}
-						style={{ padding: 8 }}
-					>
-						{layerConfig.hidden ? 'show' : 'hide'}
-					</button>
+						{new URL(layers[0].url).host}
+					</div>
+					{layers.map((layerConfig) => (
+						<div
+							style={{ display: 'flex', flexDirection: 'row' }}
+							key={layerConfig.url}
+						>
+							<Link
+								to={`/layer/${layerSlugFromUrl(layerConfig.url)}`}
+								style={{ padding: 8, paddingLeft: 16, flex: 1 }}
+							>
+								{new URL(layerConfig.url).pathname.substr(1)}
+							</Link>
+							<button
+								title={
+									layerConfig.hidden
+										? 'Make Layer visible'
+										: 'Make Layer invisible'
+								}
+								onClick={() => {
+									setLayerConfigs(
+										layerConfigs.map((lc) =>
+											lc.url === layerConfig.url
+												? { ...lc, hidden: !lc.hidden }
+												: lc
+										)
+									)
+								}}
+								style={{ padding: 8, border: 'none', backgroundColor: 'white' }}
+							>
+								{layerConfig.hidden ? '<Ø>' : '<O>'}
+							</button>
+						</div>
+					))}
 				</div>
 			))}
 		</Float>
