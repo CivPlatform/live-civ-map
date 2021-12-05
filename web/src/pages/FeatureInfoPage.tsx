@@ -1,7 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { layerUrlFromSlug } from '.'
 import { Float } from '../components/Float'
-import { useFeatureInLayer } from '../state/LayerState'
 
 export function FeatureInfoPage() {
 	const { layerSlug, featureId } = useParams()

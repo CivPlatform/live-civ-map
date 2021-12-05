@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { layerSlugFromUrl } from '.'
 import { Float } from '../components/Float'
-import { LayerConfig, useLayerConfigs } from '../state/Layer'
 
 export function LayersPage() {
 	const [layerConfigs, setLayerConfigs] = useLayerConfigs()

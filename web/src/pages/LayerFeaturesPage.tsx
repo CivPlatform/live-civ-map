@@ -3,7 +3,6 @@ import { layerUrlFromSlug } from '.'
 import { CreateFeatureMenuItem } from '../components/CreateFeatureMenu'
 import { FeaturesSelectList } from '../components/FeaturesSelectList'
 import { Float } from '../components/Float'
-import { useLayerState } from '../state/LayerState'
 
 export function LayerFeaturesPage() {
 	const { layerSlug } = useParams()

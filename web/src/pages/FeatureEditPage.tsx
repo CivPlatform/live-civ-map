@@ -2,7 +2,6 @@ import { useNavigate, useParams } from 'react-router'
 import { Link } from 'react-router-dom'
 import { layerUrlFromSlug } from '.'
 import { Float } from '../components/Float'
-import { useFeatureInLayer } from '../state/Feature'
 
 export function FeatureEditPage() {
 	const navigate = useNavigate()

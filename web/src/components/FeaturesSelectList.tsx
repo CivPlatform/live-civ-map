@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Feature } from '../model/Feature'
 import { layerSlugFromUrl } from '../pages'
-import { Feature } from '../state/Feature'
 
 export function FeaturesSelectList(props: {
 	features: { layerUrl: string; feature: Feature }[]
