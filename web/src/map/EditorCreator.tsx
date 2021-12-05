@@ -1,7 +1,9 @@
+import { observer } from 'mobx-react-lite'
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import { useNavigate } from 'react-router'
 import { atom, useRecoilState } from 'recoil'
+import { useMobx } from '../model'
 import { layerSlugFromUrl } from '../pages'
 import { Bounds, xzFromLatLng } from './spatial'
 
@@ -27,16 +29,17 @@ export function useCreatedFeatureInfo() {
 	return useRecoilState(createdFeatureInfoRecoil)
 }
 
-export function EditorCreator() {
+export const EditorCreator = observer(function EditorCreator() {
 	const navigate = useNavigate()
 
 	const [createdFeatureInfo, setCreatedFeatureInfo] = useCreatedFeatureInfo()
 
 	const { type: createdFeatureType, layerUrl } = createdFeatureInfo || {}
 
-	const createFeature = useCreateFeature(layerUrl)
-
-	const updateFeature = useUpdateFeature(layerUrl)
+	// XXX handle layer not loaded/no access
+	const layer = useMobx().layerStates.getByUrl(layerUrl!)
+	const createFeature = layer?.createFeature?.bind(layer)!
+	const updateFeature = layer?.updateFeature?.bind(layer)!
 
 	const map = useMap()
 
@@ -137,15 +140,7 @@ export function EditorCreator() {
 				}
 			}
 		}
-	}, [
-		layerUrl,
-		map.editTools,
-		createFeature,
-		updateFeature,
-		createdFeatureType,
-		setCreatedFeatureInfo,
-		navigate,
-	])
+	}, [layerUrl, map.editTools, createFeature, updateFeature, createdFeatureType, setCreatedFeatureInfo, navigate])
 
 	return null
-}
+})

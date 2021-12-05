@@ -1,20 +1,22 @@
+import { observer } from 'mobx-react-lite'
 import { useNavigate, useParams } from 'react-router'
 import { Link } from 'react-router-dom'
 import { layerUrlFromSlug } from '.'
 import { Float } from '../components/Float'
+import { useMobx } from '../model'
 
-export function FeatureEditPage() {
+export const FeatureEditPage = observer(function FeatureEditPage() {
 	const navigate = useNavigate()
 	const { layerSlug, featureId } = useParams()
 	const layerUrl = layerUrlFromSlug(layerSlug!)
-	const { feature, updateFeature, deleteFeature } = useFeatureInLayer(
-		layerUrl,
-		featureId!
-	)
 
-	if (false) updateFeature(feature!) // XXX use in Data Editor
+	const layer = useMobx().layerStates.getByUrl(layerUrl)
 
-	if (!feature) {
+	const feature = layer?.featuresById?.get(featureId!)
+	const updateFeature = layer?.updateFeature?.bind(layer)
+	const deleteFeature = () => layer?.deleteFeature?.(feature!)
+
+	if (!feature || !updateFeature || !deleteFeature) {
 		return (
 			<Float>
 				<div style={{ padding: '8px 16px' }}>Feature not loaded</div>
@@ -24,6 +26,9 @@ export function FeatureEditPage() {
 			</Float>
 		)
 	}
+
+	if (0) updateFeature(feature!) // XXX use in Data Editor
+
 	return (
 		<Float>
 			<div style={{ display: 'flex', flexDirection: 'row' }}>
@@ -54,4 +59,4 @@ export function FeatureEditPage() {
 			</div>
 		</Float>
 	)
-}
+})

@@ -1,11 +1,16 @@
+import { observer } from 'mobx-react-lite'
 import { Link, useParams } from 'react-router-dom'
 import { layerUrlFromSlug } from '.'
 import { Float } from '../components/Float'
+import { useMobx } from '../model'
 
-export function FeatureInfoPage() {
+export const FeatureInfoPage = observer(function FeatureInfoPage() {
 	const { layerSlug, featureId } = useParams()
 	const layerUrl = layerUrlFromSlug(layerSlug!)
-	const { feature } = useFeatureInLayer(layerUrl, featureId!)
+
+	const layer = useMobx().layerStates.getByUrl(layerUrl)
+	const feature = layer?.featuresById?.get(featureId!)
+
 	if (!feature) {
 		return (
 			<Float>
@@ -34,4 +39,4 @@ export function FeatureInfoPage() {
 			<div style={{ padding: '8px 16px' }}>{JSON.stringify(feature.data)}</div>
 		</Float>
 	)
-}
+})

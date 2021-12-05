@@ -1,6 +1,8 @@
 import { LeafletMouseEventHandlerFn } from 'leaflet'
+import { observer } from 'mobx-react-lite'
 import { useCallback } from 'react'
 import { useMatch, useNavigate } from 'react-router'
+import { useMobx } from '../model'
 import { Feature } from '../model/Feature'
 import { FeatureUpdateDTO } from '../model/LayerState'
 import { layerSlugFromUrl } from '../pages'
@@ -30,13 +32,14 @@ export interface EditableFeatureProps<G extends FeatureGeometry> {
 	children?: React.ReactNode
 }
 
-export function EditableFeature(props: {
+export const EditableFeature = observer(function EditableFeature(props: {
 	layerUrl: string
 	featureId: Feature['id']
 	geometry: FeatureGeometry
 	children?: React.ReactNode
 }) {
-	const updateFeature = useUpdateFeature(props.layerUrl)
+	const layer = useMobx().layerStates.getByUrl(props.layerUrl)
+	const updateFeature = layer?.updateFeature?.bind(layer)
 
 	const navigate = useNavigate()
 
@@ -69,7 +72,7 @@ export function EditableFeature(props: {
 	if ('rectangle' in geom) return <EditableRectBounds {...fp} geometry={geom} />
 	if ('map_image' in geom) return <EditableMapImage {...fp} geometry={geom} />
 	return null
-}
+})
 
 /** Used internally to set up a Leaflet feature for editing. See usages. */
 export function setEditable(r: any, enabled: any) {

@@ -1,34 +1,38 @@
+import { values } from 'mobx'
+import { observer } from 'mobx-react-lite'
 import { EditableFeature, FeatureGeometry } from '../features'
+import { useMobx } from '../model'
 import { LayerConfig } from '../model/LayerConfig'
 import { EditorCreator } from './EditorCreator'
 import LeafMap, { LeafMapProps } from './LeafMap'
 
-export function CivMap(props: LeafMapProps) {
-	const [layers] = useLayerConfigs()
+export const CivMap = observer(function CivMap(props: LeafMapProps) {
+	const layerConfigs = useMobx().layerConfigs.layers
 	// TODO show temp layer from url
 
 	return (
 		<LeafMap {...props}>
-			{layers
-				.filter((l) => !l.hidden)
-				.map((l) => (
-					<MapLayer layer={l} key={l.url} />
+			{layerConfigs
+				.filter((lc) => !lc.hidden)
+				.map((lc) => (
+					<MapLayer layerConfig={lc} key={lc.url} />
 				))}
 			<EditorCreator />
 			{props.children}
 		</LeafMap>
 	)
-}
+})
 
-export function MapLayer(props: { layer: LayerConfig }) {
-	const { layer } = props
+const MapLayer = observer(function MapLayer(props: {
+	layerConfig: LayerConfig
+}) {
+	const { layerConfig } = props
 
-	const [layerState] = useLayerState(layer.url)
+	const layerState = useMobx().layerStates.getByUrl(layerConfig.url)
 
 	if (!layerState) return null
 
-	// TODO perf: use recoil selector
-	const features = Object.values(layerState.featuresById)
+	const features = values(layerState.featuresById)
 
 	return (
 		<>
@@ -36,7 +40,7 @@ export function MapLayer(props: { layer: LayerConfig }) {
 				const geometry = feature.data as FeatureGeometry // TODO
 				return (
 					<EditableFeature
-						layerUrl={layer.url}
+						layerUrl={layerConfig.url}
 						featureId={feature.id}
 						geometry={geometry}
 						key={feature.id}
@@ -45,4 +49,4 @@ export function MapLayer(props: { layer: LayerConfig }) {
 			})}
 		</>
 	)
-}
+})

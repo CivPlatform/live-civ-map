@@ -1,23 +1,24 @@
-import {
-	avatarUrlForUser,
-	prepareOAuthLoginUrl,
-	useDiscordProfile,
-} from './DiscordLogin'
+import { observer } from 'mobx-react-lite'
+import { useMobx } from './model'
+import { avatarUrlForUser } from './model/DiscordLogin'
 
-export function DiscordUserIcon(
+export const DiscordUserIcon = observer(function DiscordUserIcon(
 	props: React.DetailedHTMLProps<
 		React.ImgHTMLAttributes<HTMLImageElement>,
 		HTMLImageElement
 	>
 ) {
-	const profile = useDiscordProfile()
+	const loginStore = useMobx().login
+	const profile = loginStore.profile
 	if (!profile) {
 		return (
 			<img
 				src="/images/discord-bw.svg"
 				alt="Discord Login"
 				title="Log in with Discord"
-				onClick={() => (document.location.href = prepareOAuthLoginUrl())}
+				onClick={() => {
+					document.location.href = loginStore.prepareOAuthLoginUrl()
+				}}
 				{...props}
 				style={{ borderRadius: 999, opacity: 0.4, ...props.style }}
 			/>
@@ -33,30 +34,4 @@ export function DiscordUserIcon(
 			style={{ borderRadius: 999, ...props.style }}
 		/>
 	)
-}
-
-export function DiscordUserRow() {
-	const profile = useDiscordProfile()
-
-	if (!profile) {
-		return (
-			<div onClick={() => (document.location.href = prepareOAuthLoginUrl())}>
-				<img
-					src="/images/discord-bw.svg"
-					alt="Discord Login"
-					style={{ borderRadius: 999 }}
-				/>
-				<span>Log in with Discord</span>
-			</div>
-		)
-	}
-	const avatarUrl = avatarUrlForUser(profile)
-	return (
-		<div>
-			<img src={avatarUrl} alt="Discord avatar" style={{ borderRadius: 999 }} />
-			<span>
-				@{profile.username}#{profile.discriminator}
-			</span>
-		</div>
-	)
-}
+})

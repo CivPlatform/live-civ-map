@@ -1,11 +1,15 @@
+import { observer } from 'mobx-react-lite'
 import { Link } from 'react-router-dom'
 import { layerSlugFromUrl } from '.'
 import { Float } from '../components/Float'
+import { useMobx } from '../model'
+import { LayerConfigStore } from '../model/LayerConfig'
 
-export function LayersPage() {
-	const [layerConfigs, setLayerConfigs] = useLayerConfigs()
-	const byServer: Record<string, LayerConfig[]> = {}
-	for (const lc of layerConfigs) {
+export const LayersPage = observer(function LayersPage() {
+	const layerConfigs = useMobx().layerConfigs
+
+	const byServer: Record<string, LayerConfigStore[]> = {}
+	for (const lc of layerConfigs.layers) {
 		const bs = byServer[lc.url] || (byServer[lc.url] = [])
 		bs.push(lc)
 	}
@@ -13,7 +17,9 @@ export function LayersPage() {
 	servers.sort((a, b) =>
 		a[0].url.toLowerCase().localeCompare(b[0].url.toLowerCase())
 	)
+
 	// TODO sorted by last used, constant order while tab open
+
 	return (
 		<Float>
 			<div style={{ padding: '8px 16px' }}>Layers</div>
@@ -22,11 +28,10 @@ export function LayersPage() {
 					const url = prompt('Enter Layer URL')
 					if (!url?.match(/^wss?:\/\/.+\..+/)) {
 						alert('Invalid URL. No layer created.')
-					} else if (layerConfigs.find((l) => l.url === url)) {
+					} else if (layerConfigs.getLayer(url)) {
 						alert('Layer is already on the map.')
 					} else {
-						const layerConfig = { url }
-						setLayerConfigs([layerConfig, ...layerConfigs])
+						layerConfigs.rememberLayer(url)
 					}
 				}}
 				style={{ padding: '8px 16px' }}
@@ -34,11 +39,8 @@ export function LayersPage() {
 				Import Layer from URL ...
 			</button>
 			{servers.map((layers) => (
-				<div>
-					<div
-						style={{ display: 'flex', flexDirection: 'row' }}
-						key={layers[0].url}
-					>
+				<div key={layers[0].url}>
+					<div style={{ display: 'flex', flexDirection: 'row' }}>
 						{new URL(layers[0].url).host}
 					</div>
 					{layers.map((layerConfig) => (
@@ -58,15 +60,7 @@ export function LayersPage() {
 										? 'Make Layer visible'
 										: 'Make Layer invisible'
 								}
-								onClick={() => {
-									setLayerConfigs(
-										layerConfigs.map((lc) =>
-											lc.url === layerConfig.url
-												? { ...lc, hidden: !lc.hidden }
-												: lc
-										)
-									)
-								}}
+								onClick={() => layerConfigs.toggleLayerHidden(layerConfig.url)}
 								style={{ padding: 8, border: 'none', backgroundColor: 'white' }}
 							>
 								{layerConfig.hidden ? '<Ø>' : '<O>'}
@@ -77,4 +71,4 @@ export function LayersPage() {
 			))}
 		</Float>
 	)
-}
+})

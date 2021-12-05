@@ -44,6 +44,7 @@ export class LayerStateStore {
 					}
 					case 'feature:all': {
 						const { features } = msg
+						// could also use .replace(values)
 						this.featuresById.clear()
 						features.forEach((f) => this.featuresById.set(f.id, f))
 						return
@@ -55,6 +56,7 @@ export class LayerStateStore {
 			},
 		})
 
+		// TODO dispose of this listener in this.dispose()
 		autorun(() => this.wsc.setToken(this.root.login.token))
 	}
 
@@ -118,6 +120,12 @@ export class LayerStatesStore {
 
 	constructor() {
 		makeAutoObservable(this)
+	}
+
+	// XXX when creating layer, do .setToken()
+
+	getByUrl(layerUrl: string) {
+		return this.layersByUrl.get(layerUrl)
 	}
 }
 
