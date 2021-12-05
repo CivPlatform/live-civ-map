@@ -1,15 +1,18 @@
+import { observer } from 'mobx-react-lite'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { layerUrlFromSlug } from '.'
 import { CreateFeatureMenuItem } from '../components/CreateFeatureMenu'
 import { Float } from '../components/Float'
+import { useMobx } from '../model'
 
-export function LayerPage() {
+export const LayerPage = observer(function LayerPage() {
 	const navigate = useNavigate()
 	const { layerSlug } = useParams()
 	const layerUrl = layerUrlFromSlug(layerSlug!)
-	const [layerConfig, setLayerConfig] = useLayerConfig(layerUrl)
-	const [layerState] = useLayerState(layerUrl)
-	// TODO handle layer not loaded
+	const layerConfigs = useMobx().layerConfigs
+	// TODO display if layerConfig not saved locally
+	const layerConfig = layerConfigs.getLayer(layerUrl) || { url: layerUrl }
+	const layerState = useMobx().layerStates.getByUrl(layerUrl)
 	const numFeatures = Object.keys(layerState?.featuresById || {}).length
 	return (
 		<Float>
@@ -17,9 +20,7 @@ export function LayerPage() {
 				Layer {layerUrl} {layerConfig.alias} [Rename]
 			</div>
 			<button
-				onClick={() =>
-					setLayerConfig({ ...layerConfig, hidden: !layerConfig.hidden })
-				}
+				onClick={() => layerConfigs.toggleLayerHidden(layerUrl)}
 				style={{ padding: '8px 16px' }}
 			>
 				{layerConfig.hidden ? 'Show' : 'Hide'} Layer
@@ -32,7 +33,7 @@ export function LayerPage() {
 				onClick={() => {
 					const ok = window.confirm(`Delete layer? ${layerUrl}`)
 					if (!ok) return
-					setLayerConfig(null)
+					layerConfigs.forgetLayer(layerUrl)
 					navigate(`/layers`)
 				}}
 				style={{ padding: '8px 16px' }}
@@ -41,4 +42,4 @@ export function LayerPage() {
 			</button>
 		</Float>
 	)
-}
+})

@@ -1,4 +1,10 @@
-import { autorun, makeAutoObservable, observable, observe } from 'mobx'
+import {
+	autorun,
+	makeAutoObservable,
+	observable,
+	reaction,
+	runInAction,
+} from 'mobx'
 import { LocalStorageStore } from './LocalStorage'
 
 /** stored to remember known layers in the client's map */
@@ -23,25 +29,32 @@ export class LayerConfigsStore {
 
 		makeAutoObservable(this)
 
-		observe(
-			() => this.ls.value,
-			() => {
+		autorun(() => {
+			const value = this.ls.value
+			runInAction(() => {
 				this.layers.clear()
-				for (const { url, hidden, alias } of this.ls.value || []) {
+				for (const { url, hidden, alias } of value || []) {
 					const layerConfig = new LayerConfigStore(url)
 					layerConfig.hidden = hidden
 					layerConfig.alias = alias
 					this.layers.push(layerConfig)
 				}
-			}
-		)
-
-		autorun(() => {
-			this.ls.value = this.layers.map((l) => {
-				const { url, hidden, alias } = l
-				return { url, hidden, alias }
 			})
 		})
+
+		reaction(
+			() => {
+				return this.layers.map((l) => {
+					const { url, hidden, alias } = l
+					return { url, hidden, alias }
+				})
+			},
+			(newVal) => runInAction(() => (this.ls.value = newVal))
+		)
+	}
+
+	getLayer(layerUrl: string) {
+		return this.layers.find((l) => l.url === layerUrl)
 	}
 
 	rememberLayer(url: string) {

@@ -1,15 +1,18 @@
+import { values } from 'mobx'
+import { observer } from 'mobx-react-lite'
 import { Link, useParams } from 'react-router-dom'
 import { layerUrlFromSlug } from '.'
 import { CreateFeatureMenuItem } from '../components/CreateFeatureMenu'
 import { FeaturesSelectList } from '../components/FeaturesSelectList'
 import { Float } from '../components/Float'
+import { useMobx } from '../model'
 
-export function LayerFeaturesPage() {
+export const LayerFeaturesPage = observer(function LayerFeaturesPage() {
 	const { layerSlug } = useParams()
 	const layerUrl = layerUrlFromSlug(layerSlug!)
-	const [layerState] = useLayerState(layerUrl)
+	const layer = useMobx().layerStates.getByUrl(layerUrl)
 	// TODO handle layer not loaded
-	const features = Object.values(layerState?.featuresById || {})
+	const features = values(layer?.featuresById!)
 	return (
 		<Float>
 			<Link to={`/layer/${layerSlug}`} style={{ padding: '8px 16px' }}>
@@ -34,4 +37,4 @@ export function LayerFeaturesPage() {
 			/>
 		</Float>
 	)
-}
+})

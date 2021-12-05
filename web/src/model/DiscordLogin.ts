@@ -93,16 +93,6 @@ export class DiscordLoginStore {
 	}
 }
 
-export const discordLoginStore = new DiscordLoginStore()
-
-// TODO LocalStorage is inherently global, but we should inject it for testing
-
-const tokenLSKey = 'LiveCivMap.discordToken'
-const csrfLSKey = 'LiveCivMap.discordCsrfToken'
-
-window.addEventListener('storage', () => readStatusFromLocalStorage())
-readStatusFromLocalStorage()
-
 function readStatusFromLocalStorage() {
 	const { discordToken, discordTokenExpiration } =
 		getLocalStorageJson(tokenLSKey)
@@ -225,3 +215,15 @@ function generateRandomString(n: number, chars: string) {
 
 const getLocalStorageJson = (key: string) =>
 	JSON.parse(window.localStorage.getItem(key) || '{}')
+
+// TODO move setup into constructor; allow using any localstorage keys
+
+export const discordLoginStore = new DiscordLoginStore()
+
+// TODO LocalStorage is inherently global, but we should inject it for testing
+
+const tokenLSKey = 'LiveCivMap.discordToken'
+const csrfLSKey = 'LiveCivMap.discordCsrfToken'
+
+window.addEventListener('storage', () => readStatusFromLocalStorage())
+readStatusFromLocalStorage()
