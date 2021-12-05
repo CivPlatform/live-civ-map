@@ -3,7 +3,6 @@ import { useMap } from 'react-leaflet'
 import { useNavigate } from 'react-router'
 import { atom, useRecoilState } from 'recoil'
 import { layerSlugFromUrl } from '../pages'
-import { useCreateFeature, useUpdateFeature } from '../state/LayerState'
 import { Bounds, xzFromLatLng } from './spatial'
 
 export type CreatedFeatureType =

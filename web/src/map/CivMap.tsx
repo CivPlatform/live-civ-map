@@ -1,6 +1,5 @@
 import { EditableFeature, FeatureGeometry } from '../features'
-import { LayerConfig, useLayerConfigs } from '../state/Layer'
-import { useLayerState } from '../state/LayerState'
+import { LayerConfig } from '../model/LayerConfig'
 import { EditorCreator } from './EditorCreator'
 import LeafMap, { LeafMapProps } from './LeafMap'
 

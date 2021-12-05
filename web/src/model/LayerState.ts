@@ -67,10 +67,12 @@ export class LayerStateStore {
 		this.permissions = null
 	}
 
-	createFeature(featurePartial: FeatureCreateDTO) {
+	createFeature(featurePartial: FeatureCreateDTO): string {
 		if (!this.root.login.profile) {
-			console.error('Cannot create feature while logged out', featurePartial)
-			return
+			throw new Error(
+				'Cannot create feature while logged out: ' +
+					JSON.stringify(featurePartial)
+			)
 		}
 		const feature: Feature = {
 			id: makeFeatureId(),
@@ -82,6 +84,7 @@ export class LayerStateStore {
 		}
 		this.wsc.send({ type: 'feature:update', feature })
 		this.featuresById.set(feature.id, feature)
+		return feature.id
 	}
 
 	updateFeature(featurePartial: FeatureUpdateDTO) {

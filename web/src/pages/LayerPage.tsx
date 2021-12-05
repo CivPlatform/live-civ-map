@@ -2,8 +2,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { layerUrlFromSlug } from '.'
 import { CreateFeatureMenuItem } from '../components/CreateFeatureMenu'
 import { Float } from '../components/Float'
-import { useLayerConfig } from '../state/Layer'
-import { useLayerState } from '../state/LayerState'
 
 export function LayerPage() {
 	const navigate = useNavigate()

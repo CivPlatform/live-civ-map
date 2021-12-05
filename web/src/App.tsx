@@ -11,12 +11,12 @@ import { Float } from './components/Float'
 import { Omnibox } from './components/Omnibox'
 import { DiscordUserIcon } from './LoginMenu'
 import { CivMap } from './map/CivMap'
+import { Feature } from './model/Feature'
 import { FeatureEditPage } from './pages/FeatureEditPage'
 import { FeatureInfoPage } from './pages/FeatureInfoPage'
 import { LayerFeaturesPage } from './pages/LayerFeaturesPage'
 import { LayerPage } from './pages/LayerPage'
 import { LayersPage } from './pages/LayersPage'
-import { Feature } from './state/Feature'
 
 export function App() {
 	return (
