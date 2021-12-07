@@ -1,16 +1,18 @@
 import { observer } from 'mobx-react-lite'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { layerSlugFromUrl } from '.'
 import { Float } from '../components/Float'
 import { useMobx } from '../model'
 import { LayerConfigStore } from '../model/LayerConfig'
 
 export const LayersPage = observer(function LayersPage() {
+	const navigate = useNavigate()
 	const layerConfigs = useMobx().layerConfigs
 
 	const byServer: Record<string, LayerConfigStore[]> = {}
 	for (const lc of layerConfigs.layers) {
-		const bs = byServer[lc.url] || (byServer[lc.url] = [])
+		const host = new URL(lc.url).host
+		const bs = byServer[host] || (byServer[host] = [])
 		bs.push(lc)
 	}
 	const servers = Object.values(byServer)
@@ -23,21 +25,35 @@ export const LayersPage = observer(function LayersPage() {
 	return (
 		<Float>
 			<div style={{ padding: '8px 16px' }}>Layers</div>
-			<button
-				onClick={() => {
-					const url = prompt('Enter Layer URL')
-					if (!url?.match(/^wss?:\/\/.+\..+/)) {
-						alert('Invalid URL. No layer created.')
-					} else if (layerConfigs.getLayer(url)) {
-						alert('Layer is already on the map.')
+			<input
+				type="text"
+				placeholder="Create Layer"
+				style={{ width: '100%' }}
+				onChange={({ target: { value, style } }) => {
+					if (!value) {
+						style.backgroundColor = 'white'
+					} else if (value.match(/^wss?:\/\//) || value.match(/^[^$/?#]+$/)) {
+						style.backgroundColor = '#aaffaa'
 					} else {
-						layerConfigs.rememberLayer(url)
+						style.backgroundColor = '#ffaaaa'
 					}
 				}}
-				style={{ padding: '8px 16px' }}
-			>
-				Import Layer from URL ...
-			</button>
+				onKeyDown={(e: any) => {
+					if (e.key === 'Enter') {
+						let url: string = e.target.value
+						if (!url.match(/^wss?:\/\//)) {
+							// either path name, or malformed
+							if (!url.match(/^[^$/?#]+$/))
+								return alert('Invalid Layer URL. Must not include $/?#')
+							url = 'wss://civmap.herokuapp.com/' + url
+						}
+						layerConfigs.rememberLayer(url)
+						navigate(`/layer/${layerSlugFromUrl(url)}`)
+						e.target.value = ''
+						e.target.style.backgroundColor = 'white'
+					}
+				}}
+			/>
 			{servers.map((layers) => (
 				<div key={layers[0].url}>
 					<div style={{ display: 'flex', flexDirection: 'row' }}>
