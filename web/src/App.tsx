@@ -125,11 +125,11 @@ function BetaOverlay() {
 				<h2>This is an early work-in-progress.</h2>
 				<p>
 					{' '}
-					Things look bad, have bugs, and might destroy/publish/corrupt your
-					data if you input it.
+					Things look bad, have bugs, everything is public, and your data may be
+					lost or corrupted.
 				</p>
 				<button autoFocus onClick={() => setClosed(true)}>
-					I will not use it for anything important
+					I will not use this for anything important
 				</button>
 			</div>
 		</div>
