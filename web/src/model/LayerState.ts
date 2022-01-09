@@ -22,7 +22,8 @@ export interface Permissions {}
 export const makeFeatureId = () => randomUUID()
 
 const colorHash = new ColorHash()
-export const getDefaultColor = (layerUrl: string) => colorHash.hsl(layerUrl)
+export const getDefaultLayerColor = (layerUrl: string) =>
+	colorHash.hex(layerUrl)
 
 /** injected dependency */
 export interface DiscordLoginStore {
@@ -84,6 +85,10 @@ export class LayerStateStore {
 	setToken(token: string | undefined) {
 		this.wsc.setToken(token)
 		this.permissions = null
+	}
+
+	get numFeatures() {
+		return this.featuresById.size
 	}
 
 	createFeature(featurePartial: FeatureCreateDTO): string {

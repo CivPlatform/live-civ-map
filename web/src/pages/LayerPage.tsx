@@ -1,9 +1,11 @@
 import { observer } from 'mobx-react-lite'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { layerUrlFromSlug } from '.'
+import { CircleIcon } from '../components/CircleIcon'
 import { CreateFeatureMenuItem } from '../components/CreateFeatureMenu'
 import { Float } from '../components/Float'
 import { useMobx } from '../model'
+import { getDefaultLayerColor } from '../model/LayerState'
 
 export const LayerPage = observer(function LayerPage() {
 	const navigate = useNavigate()
@@ -13,7 +15,6 @@ export const LayerPage = observer(function LayerPage() {
 	// TODO display if layerConfig not saved locally
 	const layerConfig = layerConfigs.getLayer(layerUrl) || { url: layerUrl }
 	const layerState = useMobx().layerStates.getByUrl(layerUrl)
-	const numFeatures = Object.keys(layerState?.featuresById || {}).length
 	return (
 		<Float>
 			<div style={{ padding: '8px 16px' }}>
@@ -26,8 +27,19 @@ export const LayerPage = observer(function LayerPage() {
 				{layerConfig.hidden ? 'Show' : 'Hide'} Layer
 			</button>
 			<CreateFeatureMenuItem layerUrl={layerUrl} />
-			<Link to={`/layer/${layerSlug}/features`} style={{ padding: '8px 16px' }}>
-				Show all {numFeatures} features
+			<Link
+				is="button"
+				to={`/layer/${layerSlug}/features`}
+				style={{ padding: '8px 16px', display: 'flex', alignItems: 'center' }}
+			>
+				<span style={{ flex: 1 }}>
+					Show all {layerState?.numFeatures} features
+				</span>
+				<CircleIcon
+					size="1em"
+					color={getDefaultLayerColor(layerUrl)}
+					title="Default color of features in this layer"
+				/>
 			</Link>
 			<button
 				onClick={() => {

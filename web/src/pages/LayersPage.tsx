@@ -1,13 +1,15 @@
 import { observer } from 'mobx-react-lite'
 import { Link, useNavigate } from 'react-router-dom'
 import { layerSlugFromUrl } from '.'
+import { CircleIcon } from '../components/CircleIcon'
 import { Float } from '../components/Float'
 import { useMobx } from '../model'
 import { LayerConfigStore } from '../model/LayerConfig'
+import { getDefaultLayerColor } from '../model/LayerState'
 
 export const LayersPage = observer(function LayersPage() {
 	const navigate = useNavigate()
-	const layerConfigs = useMobx().layerConfigs
+	const { layerConfigs, layerStates } = useMobx()
 
 	const byServer: Record<string, LayerConfigStore[]> = {}
 	for (const lc of layerConfigs.getAllLayers()) {
@@ -61,7 +63,11 @@ export const LayersPage = observer(function LayersPage() {
 					</div>
 					{layers.map((layerConfig) => (
 						<div
-							style={{ display: 'flex', flexDirection: 'row' }}
+							style={{
+								display: 'flex',
+								flexDirection: 'row',
+								alignItems: 'center',
+							}}
 							key={layerConfig.url}
 						>
 							<Link
@@ -70,6 +76,14 @@ export const LayersPage = observer(function LayersPage() {
 							>
 								{new URL(layerConfig.url).pathname.substr(1)}
 							</Link>
+							<CircleIcon
+								size="1.5em"
+								color={getDefaultLayerColor(layerConfig.url)}
+								style={{ display: 'flex', justifyContent: 'center' }}
+								title="Default color and number of features in this layer"
+							>
+								{layerStates.getByUrl(layerConfig.url)?.numFeatures}
+							</CircleIcon>
 							<button
 								title={
 									layerConfig.hidden
