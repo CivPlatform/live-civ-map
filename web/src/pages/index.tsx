@@ -16,3 +16,5 @@ export function layerUrlFromSlug(slug: string) {
 	slug = slug.match(/^wss?:\/\/.*/) ? slug : 'wss://' + slug
 	return slug
 }
+
+export const defaultLayerServer = 'wss://civmap.herokuapp.com/'

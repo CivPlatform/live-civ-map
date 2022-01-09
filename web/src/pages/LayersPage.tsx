@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { Link, useNavigate } from 'react-router-dom'
-import { layerSlugFromUrl } from '.'
+import { defaultLayerServer, layerSlugFromUrl } from '.'
 import { CircleIcon } from '../components/CircleIcon'
 import { Float } from '../components/Float'
 import { useMobx } from '../model'
@@ -22,7 +22,7 @@ export const LayersPage = observer(function LayersPage() {
 		a[0].url.toLowerCase().localeCompare(b[0].url.toLowerCase())
 	)
 
-	// TODO sorted by last used, constant order while tab open
+	// TODO sorted by last used, constant order while tab open, newly added layers at the top
 
 	return (
 		<Float>
@@ -43,11 +43,20 @@ export const LayersPage = observer(function LayersPage() {
 				onKeyDown={(e: any) => {
 					if (e.key === 'Enter') {
 						let url: string = e.target.value
-						if (!url.match(/^wss?:\/\//)) {
+						if (url.match(/^wss?:\/\//)) {
+							if (!url.match(/^wss?:\/\/.+\/.+/))
+								return alert('Invalid layer URL: Path must not be empty')
+						} else if (url.match(/^[A-Za-z0-9_]+:\/\/\S+/)) {
+							return alert(
+								'Invalid layer URL: Must be WebSocket. ' +
+									'Example: "wss://example.com/layer_name"'
+							)
+						} else {
+							const layerName = url
 							// either path name, or malformed
-							if (!url.match(/^[^$/?#]+$/))
-								return alert('Invalid Layer URL. Must not include $/?#')
-							url = 'wss://civmap.herokuapp.com/' + url
+							if (!layerName.match(/^[^$/?#]+$/))
+								return alert('Invalid layer name: Must not include $/?#')
+							url = defaultLayerServer + layerName
 						}
 						layerConfigs.addLayer(url)
 						navigate(`/layer/${layerSlugFromUrl(url)}`)
