@@ -29,7 +29,7 @@ export class WSClient<WSServerMessage, WSClientMessage> {
 	setToken(token: string | undefined) {
 		if (this.token === token) return
 		if (this.ws) {
-			this.ws.close()
+			this.ws.close(0, 'token changed')
 			this.ws = undefined
 		}
 		this.token = token

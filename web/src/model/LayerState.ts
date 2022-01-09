@@ -1,5 +1,11 @@
 import ColorHash from 'color-hash'
-import { autorun, makeAutoObservable, observable } from 'mobx'
+import {
+	autorun,
+	makeAutoObservable,
+	observable,
+	ObservableMap,
+	runInAction,
+} from 'mobx'
 import { v4 as randomUUID } from 'uuid'
 import { WSClient } from '../ws'
 import { DiscordUser } from './DiscordLogin'
@@ -31,7 +37,19 @@ export interface DiscordLoginStore {
 	profile: DiscordUser | null
 }
 
-export class LayerStateStore {
+interface LayerStateStore {
+	featuresById: ObservableMap<string, Feature>
+	numFeatures: number
+
+	permissions: Permissions | null
+
+	// these are non-undefined when editing is possible (e.g., websocket-backed)
+	createFeature?: (featurePartial: FeatureCreateDTO) => string
+	updateFeature?: (featurePartial: FeatureUpdateDTO) => void
+	deleteFeature?: (feature: FeatureDeleteDTO) => void
+}
+
+export class WSLayerStateStore implements LayerStateStore {
 	private wsc: WSClient<WSServerMessage, WSClientMessage>
 
 	private disposeAutoSetToken: () => unknown
@@ -93,7 +111,7 @@ export class LayerStateStore {
 
 	createFeature(featurePartial: FeatureCreateDTO): string {
 		if (!this.login.profile) {
-			throw new Error(
+			throw new LoggedOutError(
 				'Cannot create feature while logged out: ' +
 					JSON.stringify(featurePartial)
 			)
@@ -113,8 +131,10 @@ export class LayerStateStore {
 
 	updateFeature(featurePartial: FeatureUpdateDTO) {
 		if (!this.login.profile) {
-			console.error('Cannot update feature while logged out', featurePartial)
-			return
+			throw new LoggedOutError(
+				'Cannot update feature while logged out: ' +
+					JSON.stringify(featurePartial)
+			)
 		}
 		const existing = this.featuresById.get(featurePartial.id)
 		const feature: Feature = {
@@ -132,8 +152,42 @@ export class LayerStateStore {
 	}
 
 	deleteFeature(feature: FeatureDeleteDTO) {
+		if (!this.login.profile) {
+			throw new LoggedOutError(
+				'Cannot delete feature while logged out: ' + JSON.stringify(feature)
+			)
+		}
 		this.wsc.send({ type: 'feature:delete', feature })
 		this.featuresById.delete(feature.id)
+	}
+}
+
+export class HttpJsonLayerStateStore implements LayerStateStore {
+	featuresById = observable.map<string, Feature>()
+	permissions: Permissions = {}
+
+	constructor(private readonly login: DiscordLoginStore, readonly url: string) {
+		makeAutoObservable<this, 'login'>(this, { login: false })
+
+		fetch(url).then(async (res) => {
+			const { features } = await res.json()
+			runInAction(() => {
+				for (const { id, ...data } of features) {
+					this.featuresById.set(id, {
+						id,
+						data,
+						created_ts: 0,
+						last_edited_ts: 0,
+						creator_id: '',
+						last_editor_id: '',
+					})
+				}
+			})
+		})
+	}
+
+	get numFeatures() {
+		return this.featuresById.size
 	}
 }
 
@@ -147,13 +201,20 @@ export class LayerStatesStore {
 	getByUrl(layerUrl: string) {
 		if (!layerUrl) return undefined
 		let layer = this.layersByUrl.get(layerUrl)
-		if (!layer) {
-			layer = new LayerStateStore(this.login, layerUrl)
-			this.layersByUrl.set(layerUrl, layer)
+		if (layer) return layer
+		if (layerUrl.startsWith('ws')) {
+			layer = new WSLayerStateStore(this.login, layerUrl)
+		} else if (layerUrl.startsWith('http')) {
+			layer = new HttpJsonLayerStateStore(this.login, layerUrl)
+		} else {
+			throw new Error('Cannot load layer state for url: ' + layerUrl)
 		}
+		this.layersByUrl.set(layerUrl, layer)
 		return layer
 	}
 }
+
+export class LoggedOutError extends Error {}
 
 type WSRelayedMessage =
 	| { type: 'feature:update'; feature: Feature }
