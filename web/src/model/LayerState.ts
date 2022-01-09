@@ -1,6 +1,5 @@
 import { autorun, makeAutoObservable, observable } from 'mobx'
 import { v4 as randomUUID } from 'uuid'
-import { RootStore } from '.'
 import { WSClient } from '../ws'
 import { DiscordUser } from './DiscordLogin'
 import { Feature } from './Feature'
@@ -21,14 +20,26 @@ export interface Permissions {}
 
 export const makeFeatureId = () => randomUUID()
 
+/** injected dependency */
+export interface DiscordLoginStore {
+	token: string | undefined
+	profile: DiscordUser | null
+}
+
 export class LayerStateStore {
 	private wsc: WSClient<WSServerMessage, WSClientMessage>
+
+	private disposeAutoSetToken: () => unknown
 
 	featuresById = observable.map<string, Feature>()
 	permissions: Permissions | null = null
 
-	constructor(private readonly root: RootStore, readonly url: string) {
-		makeAutoObservable<this, 'root' | 'wsc'>(this, { root: false, wsc: false })
+	constructor(private readonly login: DiscordLoginStore, readonly url: string) {
+		makeAutoObservable<this, 'login' | 'wsc' | 'disposeAutoSetToken'>(this, {
+			login: false,
+			wsc: false,
+			disposeAutoSetToken: false,
+		})
 
 		this.wsc = new WSClient<WSServerMessage, WSClientMessage>({
 			url,
@@ -56,11 +67,13 @@ export class LayerStateStore {
 			},
 		})
 
-		// TODO dispose of this listener in this.dispose()
-		autorun(() => this.wsc.setToken(this.root.login.token))
+		this.disposeAutoSetToken = autorun(() => {
+			this.wsc.setToken(this.login.token)
+		})
 	}
 
 	dispose() {
+		this.disposeAutoSetToken()
 		this.wsc.close()
 	}
 
@@ -70,7 +83,7 @@ export class LayerStateStore {
 	}
 
 	createFeature(featurePartial: FeatureCreateDTO): string {
-		if (!this.root.login.profile) {
+		if (!this.login.profile) {
 			throw new Error(
 				'Cannot create feature while logged out: ' +
 					JSON.stringify(featurePartial)
@@ -78,9 +91,9 @@ export class LayerStateStore {
 		}
 		const feature: Feature = {
 			id: makeFeatureId(),
-			creator_id: this.root.login.profile.id,
+			creator_id: this.login.profile.id,
 			created_ts: Date.now(),
-			last_editor_id: this.root.login.profile.id,
+			last_editor_id: this.login.profile.id,
 			last_edited_ts: Date.now(),
 			data: featurePartial.data || {},
 		}
@@ -90,7 +103,7 @@ export class LayerStateStore {
 	}
 
 	updateFeature(featurePartial: FeatureUpdateDTO) {
-		if (!this.root.login.profile) {
+		if (!this.login.profile) {
 			console.error('Cannot update feature while logged out', featurePartial)
 			return
 		}
@@ -98,10 +111,10 @@ export class LayerStateStore {
 		const feature: Feature = {
 			// create if not exists
 			id: featurePartial.id,
-			creator_id: this.root.login.profile.id,
+			creator_id: this.login.profile.id,
 			created_ts: Date.now(),
 			...existing,
-			last_editor_id: this.root.login.profile.id,
+			last_editor_id: this.login.profile.id,
 			last_edited_ts: Date.now(),
 			data: { ...existing?.data, ...featurePartial.data },
 		}
@@ -118,14 +131,18 @@ export class LayerStateStore {
 export class LayerStatesStore {
 	layersByUrl = observable.map<string, LayerStateStore>()
 
-	constructor() {
-		makeAutoObservable(this)
+	constructor(private readonly login: DiscordLoginStore) {
+		makeAutoObservable<this, 'login'>(this, { login: false })
 	}
 
-	// XXX when creating layer, do .setToken()
-
 	getByUrl(layerUrl: string) {
-		return this.layersByUrl.get(layerUrl)
+		if (!layerUrl) return undefined
+		let layer = this.layersByUrl.get(layerUrl)
+		if (!layer) {
+			layer = new LayerStateStore(this.login, layerUrl)
+			this.layersByUrl.set(layerUrl, layer)
+		}
+		return layer
 	}
 }
 

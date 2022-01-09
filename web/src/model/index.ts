@@ -8,7 +8,7 @@ export class RootStore {
 
 	layerConfigs = new LayerConfigsStore('LiveCivMap:layers')
 
-	layerStates = new LayerStatesStore()
+	layerStates = new LayerStatesStore(this.login)
 }
 
 // The defaultValue argument is only used when a component does not have a matching Provider above it in the tree.
