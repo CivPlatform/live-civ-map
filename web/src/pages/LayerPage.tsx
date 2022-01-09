@@ -12,19 +12,32 @@ export const LayerPage = observer(function LayerPage() {
 	const { layerSlug } = useParams()
 	const layerUrl = layerUrlFromSlug(layerSlug!)
 	const layerConfigs = useMobx().layerConfigs
-	// TODO display if layerConfig not saved locally
-	const layerConfig = layerConfigs.getLayer(layerUrl) || { url: layerUrl }
+	const layerConfig = layerConfigs.getLayer(layerUrl)
 	const layerState = useMobx().layerStates.getByUrl(layerUrl)
 	return (
 		<Float>
 			<div style={{ padding: '8px 16px' }}>
-				Layer {layerUrl} {layerConfig.alias} [Rename]
+				Layer {layerUrl} {layerConfig?.alias} [Rename]
 			</div>
+			{!layerConfig && (
+				<div style={{ display: 'flex', alignItems: 'center' }}>
+					<span style={{ padding: '8px 16px', flex: 1 }}>
+						This is a preview
+					</span>
+					<button
+						onClick={() => layerConfigs.addLayer(layerUrl)}
+						style={{ padding: '8px 16px' }}
+					>
+						Add to my layers
+					</button>
+				</div>
+			)}
 			<button
+				// TODO show/hide temporary layer without persistent layerConfig
 				onClick={() => layerConfigs.toggleLayerHidden(layerUrl)}
 				style={{ padding: '8px 16px' }}
 			>
-				{layerConfig.hidden ? 'Show' : 'Hide'} Layer
+				{layerConfig?.hidden ? 'Show' : 'Hide'} Layer
 			</button>
 			<CreateFeatureMenuItem layerUrl={layerUrl} />
 			<Link
@@ -41,17 +54,19 @@ export const LayerPage = observer(function LayerPage() {
 					title="Default color of features in this layer"
 				/>
 			</Link>
-			<button
-				onClick={() => {
-					const ok = window.confirm(`Delete layer? ${layerUrl}`)
-					if (!ok) return
-					layerConfigs.forgetLayer(layerUrl)
-					navigate(`/layers`)
-				}}
-				style={{ padding: '8px 16px' }}
-			>
-				Forget Layer
-			</button>
+			{layerConfig && (
+				<button
+					onClick={() => {
+						const ok = window.confirm(`Forget layer? ${layerUrl}`)
+						if (!ok) return
+						layerConfigs.forgetLayer(layerUrl)
+						navigate(`/layers`)
+					}}
+					style={{ padding: '8px 16px' }}
+				>
+					Forget Layer
+				</button>
+			)}
 		</Float>
 	)
 })
