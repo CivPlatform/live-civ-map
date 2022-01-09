@@ -10,7 +10,7 @@ export const LayersPage = observer(function LayersPage() {
 	const layerConfigs = useMobx().layerConfigs
 
 	const byServer: Record<string, LayerConfigStore[]> = {}
-	for (const lc of layerConfigs.layers) {
+	for (const lc of layerConfigs.getAllLayers()) {
 		const host = new URL(lc.url).host
 		const bs = byServer[host] || (byServer[host] = [])
 		bs.push(lc)
@@ -47,7 +47,7 @@ export const LayersPage = observer(function LayersPage() {
 								return alert('Invalid Layer URL. Must not include $/?#')
 							url = 'wss://civmap.herokuapp.com/' + url
 						}
-						layerConfigs.rememberLayer(url)
+						layerConfigs.addLayer(url)
 						navigate(`/layer/${layerSlugFromUrl(url)}`)
 						e.target.value = ''
 						e.target.style.backgroundColor = 'white'

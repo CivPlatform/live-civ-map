@@ -1,9 +1,11 @@
 import {
 	autorun,
+	keys,
 	makeAutoObservable,
 	observable,
 	reaction,
 	runInAction,
+	values,
 } from 'mobx'
 import { LocalStorageStore } from './LocalStorage'
 
@@ -22,7 +24,7 @@ export class LayerConfigStore implements LayerConfig {
 export class LayerConfigsStore {
 	private ls: LocalStorageStore<LayerConfig[]>
 
-	layers = observable.array<LayerConfigStore>()
+	layersByUrl = observable.map<string, LayerConfigStore>()
 
 	constructor(lsKey: string) {
 		this.ls = new LocalStorageStore<LayerConfig[]>(lsKey)
@@ -32,19 +34,19 @@ export class LayerConfigsStore {
 		autorun(() => {
 			const value = this.ls.value
 			runInAction(() => {
-				this.layers.clear()
+				this.layersByUrl.clear()
 				for (const { url, hidden, alias } of value || []) {
 					const layerConfig = new LayerConfigStore(url)
 					layerConfig.hidden = hidden
 					layerConfig.alias = alias
-					this.layers.push(layerConfig)
+					this.layersByUrl.set(url, layerConfig)
 				}
 			})
 		})
 
 		reaction(
 			() => {
-				return this.layers.map((l) => {
+				return values(this.layersByUrl).map((l) => {
 					const { url, hidden, alias } = l
 					return { url, hidden, alias }
 				})
@@ -53,36 +55,39 @@ export class LayerConfigsStore {
 		)
 	}
 
-	getLayer(layerUrl: string) {
-		return this.layers.find((l) => l.url === layerUrl)
+	getAllLayerUrls() {
+		return keys(this.layersByUrl)
 	}
 
-	rememberLayer(url: string) {
-		if (this.layers.find((l) => l.url === url)) return
-		this.layers.push(new LayerConfigStore(url))
+	getAllLayers() {
+		return values(this.layersByUrl)
+	}
+
+	getLayer(layerUrl: string) {
+		return this.layersByUrl.get(layerUrl)
+	}
+
+	addLayer(url: string) {
+		if (this.layersByUrl.has(url)) return
+		this.layersByUrl.set(url, new LayerConfigStore(url))
 	}
 
 	forgetLayer(url: string) {
-		const existing = this.layers.find((l) => l.url === url)
-		if (!existing) return
-		this.layers.remove(existing)
+		this.layersByUrl.delete(url)
 	}
 
 	setLayerAlias(url: string, alias: string | null | undefined) {
-		this.layers.forEach((l) => {
-			if (l.url === url) l.alias = alias || undefined
-		})
+		const layer = this.layersByUrl.get(url)
+		if (layer) layer.alias = alias || undefined
 	}
 
 	setLayerHidden(url: string, hidden: boolean) {
-		this.layers.forEach((l) => {
-			if (l.url === url) l.hidden = hidden
-		})
+		const layer = this.layersByUrl.get(url)
+		if (layer) layer.hidden = hidden
 	}
 
 	toggleLayerHidden(url: string) {
-		this.layers.forEach((l) => {
-			if (l.url === url) l.hidden = !l.hidden
-		})
+		const layer = this.layersByUrl.get(url)
+		if (layer) layer.hidden = !layer.hidden
 	}
 }
