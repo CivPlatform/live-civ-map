@@ -34,40 +34,28 @@ export const LayersPage = observer(function LayersPage() {
 			<div style={{ padding: '8px 16px' }}>Layers</div>
 			<input
 				type="text"
-				placeholder="Create Layer"
+				placeholder="Create Layer or import wss:// or https:// URL"
 				style={{ width: '100%' }}
-				onChange={({ target: { value, style } }) => {
-					if (!value) {
-						style.backgroundColor = 'white'
-					} else if (value.match(/^wss?:\/\//) || value.match(/^[^$/?#]+$/)) {
-						style.backgroundColor = '#aaffaa'
+				title="Enter a layer name or a wss:// or https:// URL"
+				onChange={({ target }) => {
+					if (!target.value) {
+						target.style.backgroundColor = 'white'
+						target.title = 'Enter a layer name or a wss:// or https:// URL'
 					} else {
-						style.backgroundColor = '#ffaaaa'
+						const { error } = checkLayerUrlOrName(target.value)
+						if (error) {
+							target.style.backgroundColor = '#ffaaaa'
+							target.title = error
+						} else {
+							target.style.backgroundColor = '#aaffaa'
+							target.title = 'Press Enter to add this layer'
+						}
 					}
 				}}
 				onKeyDown={(e: any) => {
 					if (e.key === 'Enter') {
-						let url: string = e.target.value
-						if (url.match(/^wss?:\/\//)) {
-							if (!url.match(/^wss?:\/\/.+\/.+/))
-								return alert('Invalid layer URL: Path must not be empty')
-						} else if (url.match(/^https?:\/\//)) {
-							if (!url.match(/^https?:\/\/.+\/.+/))
-								return alert('Invalid layer URL: Path must not be empty')
-							if (!url.match(/.json$/))
-								return alert('Invalid layer URL: must end with .json')
-						} else if (url.match(/^[A-Za-z0-9_]+:\/\/\S+/)) {
-							return alert(
-								'Invalid layer URL: Must be WebSocket. ' +
-									'Example: "wss://example.com/layer_name"'
-							)
-						} else {
-							const layerName = url
-							// either path name, or malformed
-							if (!layerName.match(/^[^$/?#]+$/))
-								return alert('Invalid layer name: Must not include $/?#')
-							url = defaultLayerServer + layerName
-						}
+						const { url, error } = checkLayerUrlOrName(e.target.value)
+						if (!url) return alert(error)
 						layerConfigs.addLayer(url)
 						navigate(`/layer/${layerSlugFromUrl(url)}`)
 						e.target.value = ''
@@ -121,3 +109,28 @@ export const LayersPage = observer(function LayersPage() {
 		</Float>
 	)
 })
+
+function checkLayerUrlOrName(url: string) {
+	if (url.match(/^wss?:\/\//)) {
+		if (!url.match(/^wss?:\/\/.+\/.+/))
+			return { error: 'Invalid layer URL: Path must not be empty' }
+	} else if (url.match(/^https?:\/\//)) {
+		if (!url.match(/^https?:\/\/.+\/.+/))
+			return { error: 'Invalid layer URL: Path must not be empty' }
+		if (!url.match(/.json$/))
+			return { error: 'Invalid layer URL: must end with .json' }
+	} else if (url.match(/^[A-Za-z0-9_]+:\/\/\S+/)) {
+		return {
+			error:
+				'Invalid layer URL: Must be WebSocket or JSON. ' +
+				'Example: "wss://example.com/layer_name"',
+		}
+	} else {
+		const layerName = url
+		// either path name, or malformed
+		if (!layerName.match(/^[^$/?#]+$/))
+			return { error: 'Invalid layer name: Must not include $/?#' }
+		url = defaultLayerServer + layerName
+	}
+	return { url }
+}
