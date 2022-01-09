@@ -1,3 +1,4 @@
+import ColorHash from 'color-hash'
 import { autorun, makeAutoObservable, observable } from 'mobx'
 import { v4 as randomUUID } from 'uuid'
 import { WSClient } from '../ws'
@@ -19,6 +20,9 @@ export type FeatureDeleteDTO = Pick<Feature, 'id'>
 export interface Permissions {}
 
 export const makeFeatureId = () => randomUUID()
+
+const colorHash = new ColorHash()
+export const getDefaultColor = (layerUrl: string) => colorHash.hsl(layerUrl)
 
 /** injected dependency */
 export interface DiscordLoginStore {
