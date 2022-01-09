@@ -18,3 +18,7 @@ export function layerUrlFromSlug(slug: string) {
 }
 
 export const defaultLayerServer = 'wss://civmap.herokuapp.com/'
+
+export const getLayerHostFromUrl = (layerUrl: string) => new URL(layerUrl).host
+export const getLayerNameFromUrl = (layerUrl: string) =>
+	new URL(layerUrl).pathname.substr(1)

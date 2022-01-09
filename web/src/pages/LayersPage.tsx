@@ -1,6 +1,11 @@
 import { observer } from 'mobx-react-lite'
 import { Link, useNavigate } from 'react-router-dom'
-import { defaultLayerServer, layerSlugFromUrl } from '.'
+import {
+	defaultLayerServer,
+	getLayerHostFromUrl,
+	getLayerNameFromUrl,
+	layerSlugFromUrl,
+} from '.'
 import { CircleIcon } from '../components/CircleIcon'
 import { Float } from '../components/Float'
 import { useMobx } from '../model'
@@ -13,7 +18,7 @@ export const LayersPage = observer(function LayersPage() {
 
 	const byServer: Record<string, LayerConfigStore[]> = {}
 	for (const lc of layerConfigs.getAllLayers()) {
-		const host = new URL(lc.url).host
+		const host = getLayerHostFromUrl(lc.url)
 		const bs = byServer[host] || (byServer[host] = [])
 		bs.push(lc)
 	}
@@ -68,7 +73,7 @@ export const LayersPage = observer(function LayersPage() {
 			{servers.map((layers) => (
 				<div key={layers[0].url}>
 					<div style={{ display: 'flex', flexDirection: 'row' }}>
-						{new URL(layers[0].url).host}
+						{getLayerHostFromUrl(layers[0].url)}
 					</div>
 					{layers.map((layerConfig) => (
 						<div
@@ -83,7 +88,7 @@ export const LayersPage = observer(function LayersPage() {
 								to={`/layer/${layerSlugFromUrl(layerConfig.url)}`}
 								style={{ padding: 8, paddingLeft: 16, flex: 1 }}
 							>
-								{new URL(layerConfig.url).pathname.substr(1)}
+								{getLayerNameFromUrl(layerConfig.url)}
 							</Link>
 							<CircleIcon
 								size="1.5em"
