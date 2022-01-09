@@ -13,7 +13,7 @@ export function layerSlugFromUrl(url: string) {
 
 export function layerUrlFromSlug(slug: string) {
 	slug = slug.replaceAll('$', '/')
-	slug = slug.match(/^wss?:\/\/.*/) ? slug : 'wss://' + slug
+	slug = slug.match(/^(ws|http)s?:\/\/.*/) ? slug : 'wss://' + slug
 	return slug
 }
 
@@ -21,4 +21,4 @@ export const defaultLayerServer = 'wss://civmap.herokuapp.com/'
 
 export const getLayerHostFromUrl = (layerUrl: string) => new URL(layerUrl).host
 export const getLayerNameFromUrl = (layerUrl: string) =>
-	new URL(layerUrl).pathname.substr(1)
+	new URL(layerUrl).pathname.substr(1).replace(/.json$/, '')

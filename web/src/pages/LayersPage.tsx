@@ -51,6 +51,11 @@ export const LayersPage = observer(function LayersPage() {
 						if (url.match(/^wss?:\/\//)) {
 							if (!url.match(/^wss?:\/\/.+\/.+/))
 								return alert('Invalid layer URL: Path must not be empty')
+						} else if (url.match(/^https?:\/\//)) {
+							if (!url.match(/^https?:\/\/.+\/.+/))
+								return alert('Invalid layer URL: Path must not be empty')
+							if (!url.match(/.json$/))
+								return alert('Invalid layer URL: must end with .json')
 						} else if (url.match(/^[A-Za-z0-9_]+:\/\/\S+/)) {
 							return alert(
 								'Invalid layer URL: Must be WebSocket. ' +
