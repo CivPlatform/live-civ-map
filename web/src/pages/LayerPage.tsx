@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { layerUrlFromSlug } from '.'
+import { getLayerNameFromUrl, layerUrlFromSlug } from '.'
 import { CircleIcon } from '../components/CircleIcon'
 import { CreateFeatureMenuItem } from '../components/CreateFeatureMenu'
 import { Float } from '../components/Float'
@@ -17,7 +17,11 @@ export const LayerPage = observer(function LayerPage() {
 	return (
 		<Float>
 			<div style={{ padding: '8px 16px' }}>
-				Layer {layerUrl} {layerConfig?.alias} [Rename]
+				<span style={{ opacity: 0.6 }}>Layer</span>{' '}
+				{getLayerNameFromUrl(layerUrl)}{' '}
+				{layerConfig?.alias && '("' + layerConfig?.alias + '")'} [Rename]
+				<br />
+				<span style={{ fontSize: 10, opacity: 0.6 }}>{layerUrl}</span>
 			</div>
 			{!layerConfig && (
 				<div style={{ display: 'flex', alignItems: 'center' }}>
