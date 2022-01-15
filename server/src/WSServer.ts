@@ -1,33 +1,14 @@
 import { IncomingMessage } from 'http'
 import { URL } from 'url'
 import { WebSocket, WebSocketServer } from 'ws'
-import { DiscordUser, fetchDiscordUserData } from './DiscordLogin.js'
+import { DiscordUser, LayerId, WSClientMessage, WSServerMessage } from './api'
+import { fetchDiscordUserData } from './DiscordLogin'
 
 const { PORT = 8080 } = process.env
 
-export interface Feature {
-	id: string
-	creator_id: string
-	created_ts: number
-	last_editor_id: string
-	last_edited_ts: number
-	data: any
-}
-
-export type WSRelayedMessage =
-	| { type: 'feature:update'; feature: Feature }
-	| { type: 'feature:delete'; feature: { id: Feature['id'] } & (Feature | {}) }
-
-export type WSClientMessage = WSRelayedMessage
-
-export type WSServerMessage =
-	| WSRelayedMessage
-	| { type: 'feature:all'; features: Feature[] }
-	| { type: 'user:list'; users: DiscordUser[] }
-	| { type: 'user:join'; user: DiscordUser }
-
 interface Main {
 	handleClientConnected(session: WSSession): any
+	handleClientDisconnected(session: WSSession): any
 	handleClientPacket(msg: WSClientMessage, session: WSSession): any
 }
 
@@ -56,18 +37,11 @@ export class WSServer {
 			this.sessions.push(session)
 			wsc.on('close', () => {
 				this.sessions = this.sessions.filter((c) => c !== session)
+				main.handleClientDisconnected(session)
 			})
 
 			main.handleClientConnected(session)
 		})
-	}
-
-	async broadcast(msg: WSServerMessage, excludeSession?: WSSession) {
-		const msgStr = JSON.stringify(msg)
-		for (const session of this.sessions) {
-			if (session === excludeSession) continue
-			session.send(msgStr)
-		}
 	}
 }
 
@@ -77,7 +51,7 @@ export class WSSession {
 	main: Main
 	discordUser: DiscordUser
 	discordTag: string
-	layer: string
+	layerId: LayerId
 
 	constructor(
 		wsc: WebSocket,
@@ -93,7 +67,7 @@ export class WSSession {
 
 		// req.url may have query parameters
 		const url = new URL('ws://host' + req.url)
-		this.layer = url.pathname
+		this.layerId = url.pathname
 
 		wsc.on('close', (code, reason) => {
 			this.warn('Closed:', code, reason.toString())

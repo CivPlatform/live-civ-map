@@ -1,11 +1,5 @@
 import fetch from 'node-fetch'
-
-export interface DiscordUser {
-	id: string
-	username: string
-	discriminator: string
-	avatar?: string
-}
+import { DiscordUser } from './api'
 
 type UndefinedFields<T> = { [k in keyof T]?: undefined }
 
