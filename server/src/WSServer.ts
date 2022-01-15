@@ -84,6 +84,11 @@ export class WSSession {
 		})
 	}
 
+	close() {
+		this.wsc.close()
+		// close handler will do all clean-up
+	}
+
 	log(...args: any[]) {
 		console.log(`[WSC] [${this.discordTag}]`, ...args)
 	}
@@ -93,6 +98,7 @@ export class WSSession {
 	}
 
 	send(msg: string | WSServerMessage) {
+		if (this.wsc.readyState === WebSocket.CLOSED) return // cannot send anymore; drop packets
 		if (typeof msg !== 'string') msg = JSON.stringify(msg)
 		this.wsc.send(msg)
 	}

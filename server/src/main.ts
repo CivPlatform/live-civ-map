@@ -34,21 +34,34 @@ class Main {
 
 	async handleClientConnected(session: WSSession) {
 		const layerBoard = this.getLayer(session.layerId)
+		const user = session.discordUser
 
-		// TODO check authorization for layer
+		// TODO create new layer if not exists, set session user as owner
+
+		const userPerms = await layerBoard.perms.getUserPerms(user.id)
+		if (!userPerms.read) return session.close()
 
 		layerBoard.addSession(session)
 
 		const features = await layerBoard.features.getAllFeaturesInLayer()
 		session.send({ type: 'feature:all', features })
 
+		if (userPerms.manage) {
+			const allPerms = await layerBoard.perms.getAllUserPerms()
+			session.send({ type: 'perms:update', perms: allPerms })
+		} else {
+			session.send({ type: 'perms:update', perms: [userPerms] })
+		}
+
 		// includes this session's user
 		const users = layerBoard.getUniqueConnectedUsers()
 		session.send({ type: 'user:list', users })
-		layerBoard.broadcastExcept(
-			{ type: 'user:join', user: session.discordUser },
-			session
-		)
+		layerBoard.broadcastExcept({ type: 'user:join', user }, session)
+
+		if (userPerms.manage) {
+			const allPerms = await layerBoard.perms.getAllUserPerms()
+			session.send({ type: 'perms:update', perms: allPerms })
+		}
 	}
 
 	async handleClientDisconnected(session: WSSession) {
@@ -62,6 +75,7 @@ class Main {
 	async handleClientPacket(msg: WSClientMessage, session: WSSession) {
 		const layerBoard = this.getLayer(session.layerId)
 		const userId = session.discordUser.id
+		const userPerms = await layerBoard.perms.getUserPerms(userId)
 		switch (msg.type) {
 			case 'feature:update': {
 				// input validation
@@ -76,7 +90,16 @@ class Main {
 
 				const existing = await layerBoard.features.getFeature(msg.feature.id)
 
-				// TODO check authorization
+				if (!existing || existing.creator_id === userId) {
+					if (!userPerms.write_self)
+						return session.send({
+							type: 'feature:delete',
+							feature: msg.feature,
+						})
+				} else {
+					if (!userPerms.write_other)
+						return session.send({ type: 'feature:update', feature: existing })
+				}
 
 				if (!existing) {
 					msg.feature.creator_id = userId
@@ -93,10 +116,51 @@ class Main {
 				const existing = await layerBoard.features.getFeature(msg.feature.id)
 				if (!existing) return // nothing to do
 
-				// TODO check authorization
+				if (existing.creator_id === userId) {
+					if (!userPerms.write_self)
+						return session.send({
+							type: 'feature:update',
+							feature: existing,
+						})
+				} else {
+					if (!userPerms.write_other)
+						return session.send({ type: 'feature:update', feature: existing })
+				}
 
 				await layerBoard.features.deleteFeature(msg.feature)
 				layerBoard.broadcastExcept(msg, session)
+				return
+			}
+			case 'perms:update': {
+				if (!userPerms.manage) {
+					return session.close() // invalid state on client side
+				}
+
+				const now = Date.now() // same timestamp for all
+				await Promise.all(
+					msg.perms.map(async (perms) => {
+						const existing = await layerBoard.perms.getUserPerms(perms.user_id)
+						// update in-place in case future code below this refers to msg.perms
+						Object.assign(perms, { ...existing, ...perms, last_edited_ts: now })
+						await layerBoard.perms.setUserPerms(perms)
+					})
+				)
+
+				layerBoard.broadcastIfPermsExcept(msg, 'manage', session)
+				return
+			}
+			case 'perms:delete': {
+				if (!userPerms.manage) {
+					return session.close() // invalid state on client side
+				}
+
+				await Promise.all(
+					msg.userIds.map(async (user_id) => {
+						await layerBoard.perms.deleteUserPerms({ user_id })
+					})
+				)
+
+				layerBoard.broadcastIfPermsExcept(msg, 'manage', session)
 				return
 			}
 			default: {
