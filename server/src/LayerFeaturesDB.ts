@@ -30,9 +30,11 @@ export class LayerFeaturesDB {
 	constructor(readonly layerId: LayerId) {
 		this.readyP = dbReadyP.then(() =>
 			pool
-				.query('SELECT * FROM features where layer = $1;', [layerId])
+				.query<FeatureRowStr>('SELECT * FROM features where layer = $1;', [
+					layerId,
+				])
 				.then(({ rows }) => {
-					for (const { layer, data_str, ...row } of rows as FeatureRowStr[]) {
+					for (const { layer, data_str, ...row } of rows) {
 						const data = JSON.parse(data_str)
 						this.featuresById.set(row.id, { data, ...row })
 					}
@@ -60,8 +62,6 @@ export class LayerFeaturesDB {
 			throw new Error(msg)
 		}
 
-		const data_str = JSON.stringify(feature.data)
-
 		await pool.query(
 			`INSERT INTO features (
 					id, layer, creator_id, created_ts, last_editor_id, last_edited_ts, data_str
@@ -73,7 +73,7 @@ export class LayerFeaturesDB {
 				feature.created_ts,
 				feature.last_editor_id,
 				feature.last_edited_ts,
-				data_str,
+				JSON.stringify(feature.data),
 			]
 		)
 

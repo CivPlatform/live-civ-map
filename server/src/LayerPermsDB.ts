@@ -1,14 +1,17 @@
 import type { DiscordUserId, LayerId, LayerUserPerms } from './api'
 import { pool } from './db'
 
-/** one row as stored in db */
+/** represented by one db row; not serialized */
 type UserPermsRow = LayerUserPerms & { layer_id: LayerId }
+/** serialized; as stored in db */
+type UserPermsRowStr = Omit<UserPermsRow, 'user'> & { user_str: string }
 
 const dbReadyP = Promise.all([
 	pool.query(`CREATE TABLE IF NOT EXISTS
 		user_perms (
 			layer_id TEXT NOT NULL,
 			user_id TEXT NOT NULL,
+			user_str TEXT NOT NULL,
 			read BOOLEAN,
 			write_self BOOLEAN,
 			write_other BOOLEAN,
@@ -26,10 +29,14 @@ export class LayerPermsDB {
 	constructor(readonly layerId: LayerId) {
 		this.readyP = dbReadyP.then(() =>
 			pool
-				.query('SELECT * FROM user_perms where layer_id = $1;', [layerId])
+				.query<UserPermsRowStr>(
+					'SELECT * FROM user_perms where layer_id = $1;',
+					[layerId]
+				)
 				.then(({ rows }) => {
-					for (const { layer_id, ...row } of rows as UserPermsRow[]) {
-						this.permsById.set(row.user_id, row)
+					for (const { layer_id, user_str, ...row } of rows) {
+						const user = JSON.parse(user_str)
+						this.permsById.set(row.user_id, { user, ...row })
 					}
 				})
 		)
@@ -52,9 +59,10 @@ export class LayerPermsDB {
 
 		await pool.query(
 			`INSERT INTO user_perms (
-					layer_id, user_id, read, write_self, write_other, manage, last_edited_ts
-				) VALUES ($1, $2, $3, $4, $5, $6, $7)
+					layer_id, user_id, user_str, read, write_self, write_other, manage, last_edited_ts
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 				ON CONFLICT (layer_id, user_id) DO UPDATE SET
+					user_str = EXCLUDED.user_str,
 					read = EXCLUDED.read,
 					write_self = EXCLUDED.write_self,
 					write_other = EXCLUDED.write_other,
@@ -63,6 +71,7 @@ export class LayerPermsDB {
 			[
 				this.layerId,
 				perms.user_id,
+				JSON.stringify(perms.user),
 				perms.read,
 				perms.write_self,
 				perms.write_other,

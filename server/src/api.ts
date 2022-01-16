@@ -37,6 +37,7 @@ export interface DiscordUser {
 
 export interface LayerUserPerms {
 	user_id: DiscordUserId
+	user: DiscordUser
 	last_edited_ts: number
 	/** read features created by any user. required to connect */
 	read?: boolean
