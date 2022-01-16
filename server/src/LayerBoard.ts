@@ -72,7 +72,7 @@ export class LayerBoard {
 		for (const session of this.sessions) {
 			if (session === excludedSession) continue
 			const userPerms = await this.perms.getUserPerms(session.discordUser.id)
-			if (!userPerms[permKey]) continue
+			if (!userPerms?.[permKey]) continue
 			session.send(msgStr)
 		}
 	}

@@ -40,9 +40,11 @@ export class LayerPermsDB {
 		return Object.values(this.permsById)
 	}
 
-	async getUserPerms(user_id: DiscordUserId): Promise<LayerUserPerms> {
+	async getUserPerms(
+		user_id: DiscordUserId
+	): Promise<LayerUserPerms | undefined> {
 		await this.readyP
-		return this.permsById.get(user_id) || { user_id, last_edited_ts: 0 }
+		return this.permsById.get(user_id)
 	}
 
 	async setUserPerms(perms: LayerUserPerms) {

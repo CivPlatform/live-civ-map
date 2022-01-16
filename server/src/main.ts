@@ -39,14 +39,14 @@ class Main {
 		// TODO create new layer if not exists, set session user as owner
 
 		const userPerms = await layerBoard.perms.getUserPerms(user.id)
-		if (!userPerms.read) return session.close()
+		if (!userPerms?.read) return session.close()
 
 		layerBoard.addSession(session)
 
 		const features = await layerBoard.features.getAllFeaturesInLayer()
 		session.send({ type: 'feature:all', features })
 
-		if (userPerms.manage) {
+		if (userPerms?.manage) {
 			const allPerms = await layerBoard.perms.getAllUserPerms()
 			session.send({ type: 'perms:update', perms: allPerms })
 		} else {
@@ -58,7 +58,7 @@ class Main {
 		session.send({ type: 'user:list', users })
 		layerBoard.broadcastExcept({ type: 'user:join', user }, session)
 
-		if (userPerms.manage) {
+		if (userPerms?.manage) {
 			const allPerms = await layerBoard.perms.getAllUserPerms()
 			session.send({ type: 'perms:update', perms: allPerms })
 		}
@@ -91,13 +91,13 @@ class Main {
 				const existing = await layerBoard.features.getFeature(msg.feature.id)
 
 				if (!existing || existing.creator_id === userId) {
-					if (!userPerms.write_self)
+					if (!userPerms?.write_self)
 						return session.send({
 							type: 'feature:delete',
 							feature: msg.feature,
 						})
 				} else {
-					if (!userPerms.write_other)
+					if (!userPerms?.write_other)
 						return session.send({ type: 'feature:update', feature: existing })
 				}
 
@@ -117,13 +117,13 @@ class Main {
 				if (!existing) return // nothing to do
 
 				if (existing.creator_id === userId) {
-					if (!userPerms.write_self)
+					if (!userPerms?.write_self)
 						return session.send({
 							type: 'feature:update',
 							feature: existing,
 						})
 				} else {
-					if (!userPerms.write_other)
+					if (!userPerms?.write_other)
 						return session.send({ type: 'feature:update', feature: existing })
 				}
 
@@ -132,7 +132,7 @@ class Main {
 				return
 			}
 			case 'perms:update': {
-				if (!userPerms.manage) {
+				if (!userPerms?.manage) {
 					return session.close() // invalid state on client side
 				}
 
@@ -150,7 +150,7 @@ class Main {
 				return
 			}
 			case 'perms:delete': {
-				if (!userPerms.manage) {
+				if (!userPerms?.manage) {
 					return session.close() // invalid state on client side
 				}
 
