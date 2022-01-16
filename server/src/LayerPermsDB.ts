@@ -1,17 +1,17 @@
-import type { DiscordUserId, LayerId, LayerUserPerms } from './api'
+import type { DiscordUser, DiscordUserId, LayerId, LayerUserPerms } from './api'
 import { pool } from './db'
 
 /** represented by one db row; not serialized */
 type UserPermsRow = LayerUserPerms & { layer_id: LayerId }
 /** serialized; as stored in db */
-type UserPermsRowStr = Omit<UserPermsRow, 'user'> & { user_str: string }
+type UserPermsRowStr = Omit<UserPermsRow, 'user'> & { user_str?: string }
 
 const dbReadyP = Promise.all([
 	pool.query(`CREATE TABLE IF NOT EXISTS
 		user_perms (
 			layer_id TEXT NOT NULL,
 			user_id TEXT NOT NULL,
-			user_str TEXT NOT NULL,
+			user_str TEXT,
 			read BOOLEAN,
 			write_self BOOLEAN,
 			write_other BOOLEAN,
@@ -35,7 +35,9 @@ export class LayerPermsDB {
 				)
 				.then(({ rows }) => {
 					for (const { layer_id, user_str, ...row } of rows) {
-						const user = JSON.parse(user_str)
+						const user = user_str
+							? (JSON.parse(user_str) as DiscordUser)
+							: undefined
 						this.permsById.set(row.user_id, { user, ...row })
 					}
 				})
@@ -71,7 +73,7 @@ export class LayerPermsDB {
 			[
 				this.layerId,
 				perms.user_id,
-				JSON.stringify(perms.user),
+				perms.user && JSON.stringify(perms.user),
 				perms.read,
 				perms.write_self,
 				perms.write_other,
