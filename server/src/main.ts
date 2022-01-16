@@ -1,4 +1,9 @@
-import type { LayerId, WSClientMessage } from './api'
+import {
+	DEFAULT_PERMS_UID,
+	DiscordUserId,
+	LayerId,
+	WSClientMessage,
+} from './api'
 import { LayerBoard } from './LayerBoard'
 import { WSServer, WSSession } from './WSServer'
 
@@ -32,14 +37,20 @@ class Main {
 		this.uncacheTimers.set(layerId, timeout)
 	}
 
+	async getUserPermsOrDefault(layerBoard: LayerBoard, userId: DiscordUserId) {
+		const userPerms = await layerBoard.perms.getUserPerms(userId)
+		if (userPerms) return userPerms
+		return layerBoard.perms.getUserPerms(DEFAULT_PERMS_UID)
+	}
+
 	async handleClientConnected(session: WSSession) {
 		const layerBoard = this.getLayer(session.layerId)
 		const user = session.discordUser
 
 		// TODO create new layer if not exists, set session user as owner
 
-		const userPerms = await layerBoard.perms.getUserPerms(user.id)
-		if (!userPerms?.read) return session.close()
+		const userPerms = await this.getUserPermsOrDefault(layerBoard, user.id)
+		if (!userPerms?.read) return // don't close, to allow user to request permissions for this layer
 
 		layerBoard.addSession(session)
 
@@ -75,7 +86,7 @@ class Main {
 	async handleClientPacket(msg: WSClientMessage, session: WSSession) {
 		const layerBoard = this.getLayer(session.layerId)
 		const userId = session.discordUser.id
-		const userPerms = await layerBoard.perms.getUserPerms(userId)
+		const userPerms = await this.getUserPermsOrDefault(layerBoard, userId)
 		switch (msg.type) {
 			case 'feature:update': {
 				// input validation
@@ -161,6 +172,26 @@ class Main {
 				)
 
 				layerBoard.broadcastIfPermsExcept(msg, 'manage', session)
+				return
+			}
+			case 'perms:request': {
+				// this is the explicit perms for the user, versus userPerms which may be the layer's default perms if the user wasn't added to the layer explicitly
+				const explicitPerms = await layerBoard.perms.getUserPerms(userId)
+				if (explicitPerms?.read) return // user already has explicit perms, cannot request more
+
+				const requestingPerms = {
+					user_id: userId,
+					user: session.discordUser,
+					last_edited_ts: Date.now(),
+				}
+
+				await layerBoard.perms.setUserPerms(requestingPerms)
+
+				layerBoard.broadcastIfPermsExcept(
+					{ type: 'perms:update', perms: [requestingPerms] },
+					'manage',
+					session
+				)
 				return
 			}
 			default: {

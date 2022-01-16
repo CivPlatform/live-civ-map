@@ -5,7 +5,7 @@ export type WSRelayedMessage =
 	| { type: 'perms:update'; perms: LayerUserPerms[] }
 	| { type: 'perms:delete'; userIds: DiscordUserId[] }
 
-export type WSClientMessage = WSRelayedMessage
+export type WSClientMessage = WSRelayedMessage | { type: 'perms:request' }
 
 export type WSServerMessage =
 	| WSRelayedMessage
@@ -36,7 +36,7 @@ export interface DiscordUser {
 }
 
 export interface LayerUserPerms {
-	user_id: DiscordUserId
+	user_id: DiscordUserId | typeof DEFAULT_PERMS_UID
 	user?: DiscordUser | null
 	last_edited_ts: number
 	/** read features created by any user. required to connect */
@@ -48,3 +48,7 @@ export interface LayerUserPerms {
 	/** change permissions of other users; add new users */
 	manage?: boolean
 }
+
+/** A LayerUserPerms for this user_id represents the default permissions for users with no own permissions row.
+ * This works because Discord user ids are numeric, so no user can have the id "default". */
+export const DEFAULT_PERMS_UID = 'default'
