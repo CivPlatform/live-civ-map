@@ -9,7 +9,7 @@ import './App.css'
 import { FeaturesSelectList } from './components/FeaturesSelectList'
 import { Float } from './components/Float'
 import { Omnibox } from './components/Omnibox'
-import { DiscordUserIcon } from './LoginMenu'
+import { LayerAuthOverlays } from './DiscordAuthOverlay'
 import { CivMap } from './map/CivMap'
 import { Feature } from './model/Feature'
 import { FeatureEditPage } from './pages/FeatureEditPage'
@@ -43,20 +43,8 @@ export function App() {
 					<Route element={<HomePage />} />
 				</Routes>
 				<Omnibox />
-				<DiscordUserIcon
-					style={{
-						zIndex: 1000,
-						position: 'absolute',
-						top: 8,
-						right: 8,
-						height: 32,
-						width: 32,
-						boxShadow: '0 0 8px black',
-						backgroundColor: 'white',
-						opacity: 1,
-					}}
-				/>
 			</Router>
+			<LayerAuthOverlays />
 			<BetaOverlay />
 		</div>
 	)
@@ -124,7 +112,6 @@ function BetaOverlay() {
 			<div style={{ maxWidth: 400, padding: '2em', backgroundColor: 'white' }}>
 				<h2>This is an early work-in-progress.</h2>
 				<p>
-					{' '}
 					Things look bad, have bugs, everything is public, and your data may be
 					lost or corrupted.
 				</p>

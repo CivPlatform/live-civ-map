@@ -25,12 +25,13 @@ Manual setup:
 	- "build command": `yarn build`
 	- "publish directory": `web/build/`
 	- configure the environment variables as below
-- if you want to build it yourself and host the static files, e.g. on Github Pages:
+- if you want to build it yourself and host the static files, e.g., on Github Pages:
 	- set up the environment variables as below
 	- `yarn --cwd=web build`
 	- copy everything under `web/build/` into your web root
 
 #### Environment variables
+
 ```properties
 # replace with your own values
 REACT_APP_DISCORD_APP_ID=123123123123123123
@@ -40,7 +41,6 @@ REACT_APP_DISCORD_OAUTH2_REDIRECT_URI=https://live-civ-map.netlify.app/
 > The `REACT_APP_` prefix is required by ReactJS; other environment variables are not acessible. ([More info](https://create-react-app.dev/docs/adding-custom-environment-variables/))
 >
 > **WARNING:** Do not store any secrets (such as private API keys) in your React app!
->
 > These environment variables are embedded into the build, meaning anyone can view them by inspecting your app's files.
 
 ## Development setup

@@ -5,9 +5,6 @@ import { RecoilRoot } from 'recoil'
 import { App } from './App'
 import './index.css'
 import { MobxContext, RootStore } from './model'
-import { checkUrlParamsLogin } from './model/DiscordLogin'
-
-checkUrlParamsLogin()
 
 ReactDOM.render(
 	<React.StrictMode>

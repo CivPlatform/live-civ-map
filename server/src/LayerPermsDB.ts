@@ -1,4 +1,10 @@
-import type { DiscordUser, DiscordUserId, LayerId, LayerUserPerms } from './api'
+import {
+	ANONYMOUS_UID,
+	DiscordUser,
+	DiscordUserId,
+	LayerId,
+	LayerUserPerms,
+} from './api'
 import { pool } from './db'
 
 /** represented by one db row; not serialized */
@@ -17,7 +23,7 @@ const dbReadyP = Promise.all([
 			write_other BOOLEAN,
 			manage BOOLEAN,
 			last_edited_ts BIGINT NOT NULL,
-			PRIMARY KEY (layer, user_id)
+			PRIMARY KEY (layer_id, user_id)
 		);`),
 ])
 
@@ -47,6 +53,19 @@ export class LayerPermsDB {
 	async getAllUserPerms() {
 		await this.readyP
 		return Object.values(this.permsById)
+	}
+
+	async getUserPermsOrDefault(
+		user_id: DiscordUserId | undefined
+	): Promise<LayerUserPerms> {
+		let perms: LayerUserPerms | undefined
+		if (user_id) perms = await this.getUserPerms(user_id)
+		else user_id = ANONYMOUS_UID
+		// even if user_id is real, fall back to anonymous perms for this layer
+		if (!perms) perms = await this.getUserPerms(ANONYMOUS_UID)
+		// as a last resort, return empty perms
+		if (!perms) perms = { user_id, last_edited_ts: 0 }
+		return perms
 	}
 
 	async getUserPerms(

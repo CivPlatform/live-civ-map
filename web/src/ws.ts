@@ -1,12 +1,8 @@
-/** connect with current Discord token,
- * reconnect if token changes. */
 export class WSClient<WSServerMessage, WSClientMessage> {
 	readonly url: string
 	status: WsStatus
 	ws?: WebSocket
 	shouldClose = false
-
-	private token?: string
 
 	onMessage: (msg: WSServerMessage) => any
 	onStatus?: (status: WsStatus) => any
@@ -18,21 +14,10 @@ export class WSClient<WSServerMessage, WSClientMessage> {
 		onStatus?: (status: WsStatus) => any
 	}) {
 		this.url = args.url
-		this.token = args.token
 		this.onMessage = args.onMessage
 		this.onStatus = args.onStatus
 
 		this.status = { status: 'connecting', ts: Date.now() }
-		this.startWebsocketConnection()
-	}
-
-	setToken(token: string | undefined) {
-		if (this.token === token) return
-		if (this.ws) {
-			this.ws.close(0, 'token changed')
-			this.ws = undefined
-		}
-		this.token = token
 		this.startWebsocketConnection()
 	}
 
@@ -62,9 +47,8 @@ export class WSClient<WSServerMessage, WSClientMessage> {
 	private startWebsocketConnection() {
 		if (this.ws) return
 		if (this.shouldClose) return
-		if (!this.token) return
 
-		const ws = new WebSocket(this.url + '?token=' + this.token)
+		const ws = new WebSocket(this.url)
 		this.updateStatus({ status: 'connecting', ts: Date.now() })
 
 		ws.onopen = () => {

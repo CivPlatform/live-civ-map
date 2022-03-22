@@ -1,9 +1,11 @@
 import {
-	DEFAULT_PERMS_UID,
-	DiscordUserId,
+	ANONYMOUS_UID,
+	ANONYMOUS_USER,
 	LayerId,
 	WSClientMessage,
+	WSServerMessage,
 } from './api'
+import { discordAppId } from './DiscordLogin'
 import { LayerBoard } from './LayerBoard'
 import { WSServer, WSSession } from './WSServer'
 
@@ -37,39 +39,55 @@ class Main {
 		this.uncacheTimers.set(layerId, timeout)
 	}
 
-	async getUserPermsOrDefault(layerBoard: LayerBoard, userId: DiscordUserId) {
-		const userPerms = await layerBoard.perms.getUserPerms(userId)
-		if (userPerms) return userPerms
-		return layerBoard.perms.getUserPerms(DEFAULT_PERMS_UID)
-	}
-
 	async handleClientConnected(session: WSSession) {
 		const layerBoard = this.getLayer(session.layerId)
-		const user = session.discordUser
-
 		// TODO create new layer if not exists, set session user as owner
-
-		const userPerms = await this.getUserPermsOrDefault(layerBoard, user.id)
-		if (!userPerms?.read) return // don't close, to allow user to request permissions for this layer
-
 		layerBoard.addSession(session)
 
-		const features = await layerBoard.features.getAllFeaturesInLayer()
-		session.send({ type: 'feature:all', features })
+		const authPerms = await layerBoard.perms.getUserPermsOrDefault(
+			ANONYMOUS_UID
+		)
+		session.send({ type: 'auth:info', discordAppId, authPerms })
 
-		if (userPerms?.manage) {
-			const allPerms = await layerBoard.perms.getAllUserPerms()
-			session.send({ type: 'perms:update', perms: allPerms })
-		} else {
-			session.send({ type: 'perms:update', perms: [userPerms] })
+		const msgJoin: WSServerMessage = { type: 'user:join', user: ANONYMOUS_USER }
+		layerBoard.broadcastIfPermsExcept(msgJoin, 'read', session)
+
+		await this.updateClientAfterPermsChange(session)
+	}
+
+	async handleClientAuthenticated(session: WSSession) {
+		const user = session.discordUser
+		if (!user) throw new Error(`Expected authenticated but was not`)
+
+		const layerBoard = this.getLayer(session.layerId)
+		const user_id = session.discordUser?.id || ANONYMOUS_UID
+		const userPerms = await layerBoard.perms.getUserPermsOrDefault(user_id)
+
+		await this.updateClientAfterPermsChange(session)
+
+		if (userPerms.read) {
+			// includes this session's user
+			const users = layerBoard.getUniqueConnectedUsers()
+			session.send({ type: 'user:list', users })
+			const msgJoin: WSServerMessage = { type: 'user:join', user }
+			layerBoard.broadcastIfPermsExcept(msgJoin, 'read', session)
+		}
+	}
+
+	async updateClientAfterPermsChange(session: WSSession) {
+		const layerBoard = this.getLayer(session.layerId)
+
+		const user = session.discordUser || ANONYMOUS_USER
+		const userPerms = await layerBoard.perms.getUserPermsOrDefault(user.id)
+
+		session.send({ type: 'perms:self', perms: { ...userPerms, user } })
+
+		if (userPerms.read) {
+			const features = await layerBoard.features.getAllFeaturesInLayer()
+			session.send({ type: 'feature:all', features })
 		}
 
-		// includes this session's user
-		const users = layerBoard.getUniqueConnectedUsers()
-		session.send({ type: 'user:list', users })
-		layerBoard.broadcastExcept({ type: 'user:join', user }, session)
-
-		if (userPerms?.manage) {
+		if (userPerms.manage) {
 			const allPerms = await layerBoard.perms.getAllUserPerms()
 			session.send({ type: 'perms:update', perms: allPerms })
 		}
@@ -85,8 +103,8 @@ class Main {
 
 	async handleClientPacket(msg: WSClientMessage, session: WSSession) {
 		const layerBoard = this.getLayer(session.layerId)
-		const userId = session.discordUser.id
-		const userPerms = await this.getUserPermsOrDefault(layerBoard, userId)
+		const userId = session.discordUser?.id || ANONYMOUS_UID
+		const userPerms = await layerBoard.perms.getUserPermsOrDefault(userId)
 		switch (msg.type) {
 			case 'feature:update': {
 				// input validation
@@ -120,7 +138,7 @@ class Main {
 					msg.feature.created_ts = existing.created_ts
 					await layerBoard.features.updateFeature(msg.feature)
 				}
-				layerBoard.broadcastExcept(msg, session)
+				layerBoard.broadcastIfPermsExcept(msg, 'read', session)
 				return
 			}
 			case 'feature:delete': {
@@ -139,7 +157,7 @@ class Main {
 				}
 
 				await layerBoard.features.deleteFeature(msg.feature)
-				layerBoard.broadcastExcept(msg, session)
+				layerBoard.broadcastIfPermsExcept(msg, 'read', session)
 				return
 			}
 			case 'perms:update': {
@@ -175,6 +193,8 @@ class Main {
 				return
 			}
 			case 'perms:request': {
+				if (!session.discordUser) return // can't request perms without logging in
+
 				// this is the explicit perms for the user, versus userPerms which may be the layer's default perms if the user wasn't added to the layer explicitly
 				const explicitPerms = await layerBoard.perms.getUserPerms(userId)
 				if (explicitPerms?.read) return // user already has explicit perms, cannot request more
@@ -197,7 +217,7 @@ class Main {
 			default: {
 				console.error(
 					`Unknown message from`,
-					session.discordTag,
+					session.clientName,
 					JSON.stringify(msg)
 				)
 				return

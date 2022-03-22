@@ -1,4 +1,6 @@
-import type {
+import {
+	ANONYMOUS_UID,
+	ANONYMOUS_USER,
 	DiscordUser,
 	DiscordUserId,
 	LayerUserPerms,
@@ -8,7 +10,7 @@ import { LayerFeaturesDB } from './LayerFeaturesDB'
 import { LayerPermsDB } from './LayerPermsDB'
 
 interface WSSession {
-	discordUser: DiscordUser
+	discordUser?: DiscordUser
 	send(msg: string): void
 }
 
@@ -49,17 +51,11 @@ export class LayerBoard {
 
 	getUniqueConnectedUsers() {
 		const users: Record<DiscordUserId, DiscordUser> = {}
-		this.sessions.forEach((s) => (users[s.discordUser.id] = s.discordUser))
-		return Object.values(users)
-	}
-
-	/** send the message to all connected sessions except excludedSession */
-	async broadcastExcept(msg: WSServerMessage, excludedSession?: WSSession) {
-		const msgStr = JSON.stringify(msg)
-		for (const session of this.sessions) {
-			if (session === excludedSession) continue
-			session.send(msgStr)
+		for (const s of this.sessions) {
+			if (s.discordUser) users[s.discordUser.id] = s.discordUser
+			else users[ANONYMOUS_UID] = ANONYMOUS_USER // they all get collapsed into one key, but at least that indicates that anonymous user(s) are present
 		}
+		return Object.values(users)
 	}
 
 	/** send the message to all connected sessions except excludedSession */
@@ -71,7 +67,8 @@ export class LayerBoard {
 		const msgStr = JSON.stringify(msg)
 		for (const session of this.sessions) {
 			if (session === excludedSession) continue
-			const userPerms = await this.perms.getUserPerms(session.discordUser.id)
+			const userId = session.discordUser?.id
+			const userPerms = await this.perms.getUserPermsOrDefault(userId)
 			if (!userPerms?.[permKey]) continue
 			session.send(msgStr)
 		}

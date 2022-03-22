@@ -1,17 +1,19 @@
 import { makeAutoObservable, reaction, runInAction } from 'mobx'
 
-/** Read/update LocalStorage, parse/stringify as JSON. */
+/** Read/update LocalStorage. */
 export class LocalStorageStrStore {
 	value: string | null = null
 
+	private disposeReaction: () => void
+
 	constructor(readonly key: string) {
-		makeAutoObservable(this)
+		makeAutoObservable(this, { disposeReaction: false } as any)
 
 		this.readFromLocalStorage()
 
 		window.addEventListener('storage', this.handleStorageEvent)
 
-		reaction(
+		this.disposeReaction = reaction(
 			() => this.value,
 			(value) =>
 				runInAction(() => {
@@ -30,6 +32,7 @@ export class LocalStorageStrStore {
 
 	dispose() {
 		window.removeEventListener('storage', this.handleStorageEvent)
+		this.disposeReaction()
 	}
 
 	private readFromLocalStorage() {
