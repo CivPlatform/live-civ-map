@@ -43,7 +43,7 @@ export function checkValidMultiLine(line: any): boolean {
 	return line && line.length && line.every(checkValidLine)
 }
 export function checkValidLine(line: any): boolean {
-	return line && line.length && line.every(checkValidPos)
+	return line && line.length >= 2 && line.every(checkValidPos)
 }
 function checkValidPos(pos: any): boolean {
 	return (
