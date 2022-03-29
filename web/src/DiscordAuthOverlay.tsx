@@ -1,5 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { useCallback } from 'react'
+import { Popup } from './components/Popup'
 import { useMobx } from './model'
 import { prepareOAuthLoginUrl } from './model/DiscordLogin'
 
@@ -14,7 +15,10 @@ export const LayerAuthOverlays = observer(() => {
 	)
 })
 
-const LayerAuthOverlay = observer(({ layerUrl }: { layerUrl: string }) => {
+const LayerAuthOverlay = observer(function LayerAuthOverlay(props: {
+	layerUrl: string
+}) {
+	const { layerUrl } = props
 	const layerState = useMobx().layerStates.getByUrl(layerUrl)
 
 	const decline = useCallback(() => {
@@ -22,6 +26,7 @@ const LayerAuthOverlay = observer(({ layerUrl }: { layerUrl: string }) => {
 		// TODO allow logging in later via button
 		layerState!.loginDiscordAppId = undefined
 	}, [layerState])
+
 	const logIn = useCallback(() => {
 		const url = prepareOAuthLoginUrl(
 			layerState!.mapServer,
@@ -35,34 +40,18 @@ const LayerAuthOverlay = observer(({ layerUrl }: { layerUrl: string }) => {
 	if (!layerState.loginDiscordAppId) return null // server has not offeret a log-in option (yet)
 
 	return (
-		<div
-			style={{
-				zIndex: 99999,
-				position: 'absolute',
-				top: 0,
-				right: 0,
-				bottom: 0,
-				left: 0,
-				padding: '1em',
-				display: 'flex',
-				justifyContent: 'center',
-				alignItems: 'center',
-				backgroundColor: 'rgba(0,0,0, 0.5)',
-			}}
-		>
-			<div style={{ maxWidth: 400, padding: '2em', backgroundColor: 'white' }}>
-				<h2>Log in to use layer</h2>
-				<p>To use this map layer, you must log in with Discord.</p>
-				<p>
-					<code>{layerUrl}</code>
-				</p>
-				<button autoFocus onClick={() => decline()}>
-					Disable layer
-				</button>
-				<button autoFocus onClick={() => logIn()}>
-					Log in
-				</button>
-			</div>
-		</div>
+		<Popup onClose={decline}>
+			<h2>Log in to use layer</h2>
+			<p>To use this map layer, you must log in with Discord.</p>
+			<p>
+				<code>{layerUrl}</code>
+			</p>
+			<button autoFocus onClick={() => decline()}>
+				Disable layer
+			</button>
+			<button autoFocus onClick={() => logIn()}>
+				Log in
+			</button>
+		</Popup>
 	)
 })

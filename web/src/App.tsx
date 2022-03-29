@@ -9,6 +9,7 @@ import './App.css'
 import { FeaturesSelectList } from './components/FeaturesSelectList'
 import { Float } from './components/Float'
 import { Omnibox } from './components/Omnibox'
+import { Popup } from './components/Popup'
 import { LayerAuthOverlays } from './DiscordAuthOverlay'
 import { CivMap } from './map/CivMap'
 import { Feature } from './model/Feature'
@@ -94,31 +95,15 @@ function BetaOverlay() {
 	const [closed, setClosed] = useState(false)
 	if (closed) return null
 	return (
-		<div
-			style={{
-				zIndex: 99999,
-				position: 'absolute',
-				top: 0,
-				right: 0,
-				bottom: 0,
-				left: 0,
-				padding: '1em',
-				display: 'flex',
-				justifyContent: 'center',
-				alignItems: 'center',
-				backgroundColor: 'rgba(0,0,0, 0.5)',
-			}}
-		>
-			<div style={{ maxWidth: 400, padding: '2em', backgroundColor: 'white' }}>
-				<h2>This is an early work-in-progress.</h2>
-				<p>
-					Things look bad, have bugs, everything is public, and your data may be
-					lost or corrupted.
-				</p>
-				<button autoFocus onClick={() => setClosed(true)}>
-					I will not use this for anything important
-				</button>
-			</div>
-		</div>
+		<Popup onClose={() => setClosed(true)}>
+			<h2>This is an early work-in-progress.</h2>
+			<p>
+				Things look bad, have bugs, everything is public, and your data may be
+				lost or corrupted.
+			</p>
+			<button autoFocus onClick={() => setClosed(true)}>
+				I will not use this for anything important
+			</button>
+		</Popup>
 	)
 }
