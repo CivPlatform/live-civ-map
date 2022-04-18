@@ -58,6 +58,13 @@ export interface LayerUserPerms {
 	manage?: boolean
 }
 
+export const fullPerms: Omit<LayerUserPerms, 'user_id' | 'last_edited_ts'> = {
+	read: true,
+	write_self: true,
+	write_other: true,
+	manage: true,
+}
+
 /** A LayerUserPerms for this user_id represents the default permissions for users with no own permissions row.
  * This works because Discord user ids are numeric, so no user can have the id "(anonymous)". */
 export const ANONYMOUS_UID = '(anonymous)'

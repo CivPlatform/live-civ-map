@@ -50,7 +50,7 @@ export class LayerPermsDB {
 		)
 	}
 
-	async getAllUserPerms() {
+	async getAllUserPerms(): Promise<LayerUserPerms[]> {
 		await this.readyP
 		return Object.values(this.permsById)
 	}

@@ -35,6 +35,16 @@ export class LayerBoard {
 		this.permsDB = new LayerPermsDB(layerId)
 	}
 
+	/** If this layer (id) has not been used by anybody yet.
+	 * At least the owner's perms get stored once the layer (id) is created. */
+	async hasNoOwner() {
+		const perms = await this.perms.getAllUserPerms()
+		if (Object.keys(perms).length) return false
+		const features = await this.features.getAllFeaturesInLayer()
+		if (Object.keys(features).length) return false
+		return true
+	}
+
 	addSession(session: WSSession) {
 		this.sessions.push(session)
 	}

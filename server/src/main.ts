@@ -1,7 +1,9 @@
 import {
 	ANONYMOUS_UID,
 	ANONYMOUS_USER,
+	fullPerms,
 	LayerId,
+	LayerUserPerms,
 	WSClientMessage,
 	WSServerMessage,
 } from './api'
@@ -41,7 +43,6 @@ class Main {
 
 	async handleClientConnected(session: WSSession) {
 		const layerBoard = this.getLayer(session.layerId)
-		// TODO create new layer if not exists, set session user as owner
 		layerBoard.addSession(session)
 
 		const authPerms = await layerBoard.perms.getUserPermsOrDefault(
@@ -199,10 +200,16 @@ class Main {
 				const explicitPerms = await layerBoard.perms.getUserPerms(userId)
 				if (explicitPerms?.read) return // user already has explicit perms, cannot request more
 
-				const requestingPerms = {
+				let requestingPerms: LayerUserPerms = {
 					user_id: userId,
 					user: session.discordUser,
 					last_edited_ts: Date.now(),
+				}
+
+				// TODO fix race condition: could make multiple users owners
+				if (await layerBoard.hasNoOwner()) {
+					// create this layer, set user as owner
+					requestingPerms = { ...requestingPerms, ...fullPerms }
 				}
 
 				await layerBoard.perms.setUserPerms(requestingPerms)
