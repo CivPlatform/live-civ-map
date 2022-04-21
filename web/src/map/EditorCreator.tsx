@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router'
 import { atom, useRecoilState } from 'recoil'
 import { useMobx } from '../model'
 import { layerSlugFromUrl } from '../pages'
+import { mkFeatureEditPath } from '../pages/FeatureEditPage'
 import { Bounds, xzFromLatLng } from './spatial'
 
 export type CreatedFeatureType =
@@ -52,7 +53,7 @@ export const EditorCreator = observer(function EditorCreator() {
 					const [x, z] = xzFromLatLng(tempMarker.getLatLng())
 					const id = createFeature({ data: { x, z } })
 					setCreatedFeatureInfo(null)
-					navigate(`/layer/${layerSlug}/feature/${id}/edit`)
+					navigate(mkFeatureEditPath(layerSlug, id))
 				})
 				return () => {
 					tempMarker.remove()
@@ -74,7 +75,7 @@ export const EditorCreator = observer(function EditorCreator() {
 				})
 				tempLine.on('editable:drawing:commit', () => {
 					setCreatedFeatureInfo(null)
-					navigate(`/layer/${layerSlug}/feature/${id}/edit`)
+					if (id) navigate(mkFeatureEditPath(layerSlug, id))
 				})
 				return () => {
 					tempLine.remove()
@@ -96,7 +97,7 @@ export const EditorCreator = observer(function EditorCreator() {
 				})
 				tempPoly.on('editable:drawing:commit', () => {
 					setCreatedFeatureInfo(null)
-					navigate(`/layer/${layerSlug}/feature/${id}/edit`)
+					if (id) navigate(mkFeatureEditPath(layerSlug, id))
 				})
 				return () => {
 					tempPoly.remove()
@@ -112,7 +113,7 @@ export const EditorCreator = observer(function EditorCreator() {
 					]
 					const id = createFeature({ data: { rectangle } })
 					setCreatedFeatureInfo(null)
-					navigate(`/layer/${layerSlug}/feature/${id}/edit`)
+					navigate(mkFeatureEditPath(layerSlug, id))
 				})
 				return () => {
 					tempRect.remove()
@@ -129,7 +130,7 @@ export const EditorCreator = observer(function EditorCreator() {
 					const url = prompt('Enter map image URL')
 					if (url?.match(/^https?:\/\/.+\..+/)) {
 						const id = createFeature({ data: { map_image: { bounds, url } } })
-						navigate(`/layer/${layerSlug}/feature/${id}/edit`)
+						navigate(mkFeatureEditPath(layerSlug, id))
 					} else {
 						alert('Invalid image URL. No overlay created.')
 					}

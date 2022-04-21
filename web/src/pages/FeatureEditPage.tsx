@@ -1,26 +1,40 @@
 import { observer } from 'mobx-react-lite'
 import { useNavigate, useParams } from 'react-router'
-import { Link } from 'react-router-dom'
-import { layerUrlFromSlug } from '.'
+import { Link, Route } from 'react-router-dom'
+import { featureIdFromSlug, featureSlugFromId, layerUrlFromSlug } from '.'
 import { Float } from '../components/Float'
 import { useMobx } from '../model'
+import { mkFeatureInfoPath } from './FeatureInfoPage'
+import { mkLayerFeaturesPath } from './LayerFeaturesPage'
+import { mkLayerPath } from './LayerPage'
+
+export const mkFeatureEditPath = (layerSlug: string, featureId: string) =>
+	`/layer/${layerSlug}/feature/${featureSlugFromId(featureId)}/edit`
+
+export const FeatureEditRoute = () => (
+	<Route
+		path={mkFeatureEditPath(':layerSlug', ':featureSlug')}
+		element={<FeatureEditPage />}
+	/>
+)
 
 export const FeatureEditPage = observer(function FeatureEditPage() {
 	const navigate = useNavigate()
-	const { layerSlug, featureId } = useParams()
-	const layerUrl = layerUrlFromSlug(layerSlug!)
+	const { layerSlug = '', featureSlug = '' } = useParams()
+	const layerUrl = layerUrlFromSlug(layerSlug)
+	const featureId = featureIdFromSlug(featureSlug)
 
 	const layer = useMobx().layerStates.getByUrl(layerUrl)
 
-	const feature = layer?.featuresById?.get(featureId!)
+	const feature = layer?.featuresById?.get(featureId)
 	const updateFeature = layer?.updateFeature?.bind(layer)
-	const deleteFeature = () => layer?.deleteFeature?.(feature!)
+	const deleteFeature = () => feature && layer?.deleteFeature?.(feature)
 
 	if (!feature || !updateFeature || !deleteFeature) {
 		return (
 			<Float>
 				<div style={{ padding: '8px 16px' }}>Feature not loaded</div>
-				<Link to={`/layer/${layerSlug}`} style={{ padding: '8px 16px' }}>
+				<Link to={mkLayerPath(layerSlug)} style={{ padding: '8px 16px' }}>
 					Go to Layer {layerUrl}
 				</Link>
 			</Float>
@@ -34,7 +48,7 @@ export const FeatureEditPage = observer(function FeatureEditPage() {
 			<div style={{ display: 'flex', flexDirection: 'row' }}>
 				<div style={{ padding: '8px 16px', flex: 1 }}>Editing Feature</div>
 				<Link
-					to={`/layer/${layerSlug}/feature/${feature.id}`}
+					to={mkFeatureInfoPath(layerSlug, feature.id)}
 					style={{ padding: '8px 16px' }}
 				>
 					Stop editing
@@ -48,7 +62,7 @@ export const FeatureEditPage = observer(function FeatureEditPage() {
 					const ok = window.confirm(`Delete feature?`)
 					if (!ok) return
 					deleteFeature()
-					navigate(`/layer/${layerSlug}/features`)
+					navigate(mkLayerFeaturesPath(layerSlug))
 				}}
 				style={{ padding: '8px 16px' }}
 			>

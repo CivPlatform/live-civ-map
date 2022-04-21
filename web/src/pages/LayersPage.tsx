@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Route } from 'react-router-dom'
 import { getLayerHostFromUrl, getLayerNameFromUrl, layerSlugFromUrl } from '.'
 import { CircleIcon } from '../components/CircleIcon'
 import { Float } from '../components/Float'
@@ -8,6 +8,13 @@ import { useMobx } from '../model'
 import { LayerConfigStore } from '../model/LayerConfig'
 import { getDefaultLayerColor } from '../model/LayerState'
 import { CreateLayerPopup } from './CreateLayerPopup'
+import { mkLayerPath } from './LayerPage'
+
+export const layersPath = `/layers`
+
+export const LayersRoute = () => (
+	<Route path={layersPath} element={<LayersPage />} />
+)
 
 export const LayersPage = observer(function LayersPage() {
 	const { layerConfigs, layerStates } = useMobx()
@@ -44,7 +51,7 @@ export const LayersPage = observer(function LayersPage() {
 							key={layerConfig.url}
 						>
 							<Link
-								to={`/layer/${layerSlugFromUrl(layerConfig.url)}`}
+								to={mkLayerPath(layerSlugFromUrl(layerConfig.url))}
 								style={{ padding: 8, paddingLeft: 16, flex: 1 }}
 							>
 								{getLayerNameFromUrl(layerConfig.url)}

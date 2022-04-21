@@ -6,6 +6,8 @@ import { useMobx } from '../model'
 import { Feature } from '../model/Feature'
 import { FeatureUpdateDTO } from '../model/LayerState/LayerStateStore'
 import { layerSlugFromUrl } from '../pages'
+import { mkFeatureEditPath } from '../pages/FeatureEditPage'
+import { mkFeatureInfoPath } from '../pages/FeatureInfoPage'
 import { CircleGeometry, EditableCircle } from './Circle'
 import { EditableLines, LinesGeometry } from './Lines'
 import { EditableMapImage, MapImageGeometry } from './MapImage'
@@ -44,13 +46,16 @@ export const EditableFeature = observer(function EditableFeature(props: {
 	const navigate = useNavigate()
 
 	const routerMatchEdit = useMatch(
-		`/layer/${layerSlugFromUrl(props.layerUrl)}/feature/${props.featureId}/edit`
+		mkFeatureEditPath(layerSlugFromUrl(props.layerUrl), props.featureId)
 	)
 
 	const onClick = useCallback(() => {
 		const layerSlug = layerSlugFromUrl(props.layerUrl)
-		const pathBase = `/layer/${layerSlug}/feature/${props.featureId}`
-		navigate(routerMatchEdit ? pathBase + '/edit' : pathBase)
+		navigate(
+			routerMatchEdit
+				? mkFeatureInfoPath(layerSlug, props.featureId)
+				: mkFeatureEditPath(layerSlug, props.featureId)
+		)
 	}, [navigate, routerMatchEdit, props.layerUrl, props.featureId])
 
 	const fp: EditableFeatureProps<FeatureGeometry> = {

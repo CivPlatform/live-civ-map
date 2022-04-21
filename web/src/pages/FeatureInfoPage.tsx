@@ -1,21 +1,34 @@
 import { observer } from 'mobx-react-lite'
-import { Link, useParams } from 'react-router-dom'
-import { layerUrlFromSlug } from '.'
+import { Link, Route, useParams } from 'react-router-dom'
+import { featureIdFromSlug, featureSlugFromId, layerUrlFromSlug } from '.'
 import { Float } from '../components/Float'
 import { useMobx } from '../model'
+import { mkFeatureEditPath } from './FeatureEditPage'
+import { mkLayerPath } from './LayerPage'
+
+export const mkFeatureInfoPath = (layerSlug: string, featureId: string) =>
+	`/layer/${layerSlug}/feature/${featureSlugFromId(featureId)}`
+
+export const FeatureInfoRoute = () => (
+	<Route
+		path={mkFeatureInfoPath(':layerSlug', ':featureSlug')}
+		element={<FeatureInfoPage />}
+	/>
+)
 
 export const FeatureInfoPage = observer(function FeatureInfoPage() {
-	const { layerSlug, featureId } = useParams()
-	const layerUrl = layerUrlFromSlug(layerSlug!)
+	const { layerSlug = '', featureSlug = '' } = useParams()
+	const layerUrl = layerUrlFromSlug(layerSlug)
+	const featureId = featureIdFromSlug(featureSlug)
 
 	const layer = useMobx().layerStates.getByUrl(layerUrl)
-	const feature = layer?.featuresById?.get(featureId!)
+	const feature = layer?.featuresById?.get(featureId)
 
 	if (!feature) {
 		return (
 			<Float>
 				<div style={{ padding: '8px 16px' }}>Feature not loaded</div>
-				<Link to={`/layer/${layerSlug}`} style={{ padding: '8px 16px' }}>
+				<Link to={mkLayerPath(layerSlug)} style={{ padding: '8px 16px' }}>
 					Go to Layer {layerUrl}
 				</Link>
 			</Float>
@@ -27,11 +40,11 @@ export const FeatureInfoPage = observer(function FeatureInfoPage() {
 			<button onClick={() => 0 /* TODO */} style={{ padding: '8px 16px' }}>
 				Show on map
 			</button>
-			<Link to={`/layer/${layerSlug}`} style={{ padding: '8px 16px' }}>
+			<Link to={mkLayerPath(layerSlug)} style={{ padding: '8px 16px' }}>
 				in Layer {layerUrl}
 			</Link>
 			<Link
-				to={`/layer/${layerSlug}/feature/${featureId}/edit`}
+				to={mkFeatureEditPath(layerSlug, featureId)}
 				style={{ padding: '8px 16px' }}
 			>
 				Edit

@@ -13,11 +13,11 @@ import { Popup } from './components/Popup'
 import { LayerAuthOverlays } from './DiscordAuthOverlay'
 import { CivMap } from './map/CivMap'
 import { Feature } from './model/Feature'
-import { FeatureEditPage } from './pages/FeatureEditPage'
-import { FeatureInfoPage } from './pages/FeatureInfoPage'
-import { LayerFeaturesPage } from './pages/LayerFeaturesPage'
-import { LayerPage } from './pages/LayerPage'
-import { LayersPage } from './pages/LayersPage'
+import { FeatureEditRoute } from './pages/FeatureEditPage'
+import { FeatureInfoRoute } from './pages/FeatureInfoPage'
+import { LayerFeaturesRoute } from './pages/LayerFeaturesPage'
+import { LayerRoute } from './pages/LayerPage'
+import { LayersPage, LayersRoute } from './pages/LayersPage'
 
 export function App() {
 	return (
@@ -27,20 +27,11 @@ export function App() {
 				<Routes>
 					<Route path="/" element={<HomePage />} />
 					<Route path="/search/:query" element={<SearchPage />} />
-					<Route path="/layers" element={<LayersPage />} />
-					<Route path="/layer/:layerSlug" element={<LayerPage />} />
-					<Route
-						path="/layer/:layerSlug/features"
-						element={<LayerFeaturesPage />}
-					/>
-					<Route
-						path="/layer/:layerSlug/feature/:featureId"
-						element={<FeatureInfoPage />}
-					/>
-					<Route
-						path="/layer/:layerSlug/feature/:featureId/edit"
-						element={<FeatureEditPage />}
-					/>
+					<LayersRoute />
+					<LayerRoute />
+					<LayerFeaturesRoute />
+					<FeatureInfoRoute />
+					<FeatureEditRoute />
 					<Route element={<HomePage />} />
 				</Routes>
 				<Omnibox />
