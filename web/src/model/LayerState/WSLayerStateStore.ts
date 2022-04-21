@@ -1,13 +1,5 @@
-import ColorHash from 'color-hash'
-import {
-	autorun,
-	makeAutoObservable,
-	observable,
-	ObservableMap,
-	runInAction,
-} from 'mobx'
-import { v4 as randomUUID } from 'uuid'
-import { WSClient } from '../ws'
+import { autorun, makeAutoObservable, observable, runInAction } from 'mobx'
+import { WSClient } from '../../ws'
 import {
 	codeLSKeyForMapServer,
 	DiscordUser,
@@ -15,48 +7,10 @@ import {
 	jwtLSKeyForMapServer,
 	OAuth2CodeInfo,
 	redirectUriForMapServer,
-} from './DiscordLogin'
-import { Feature } from './Feature'
-import { LocalStorageStrStore } from './LocalStorage'
-
-export type FeatureCreateDTO = Omit<
-	Feature,
-	'id' | 'creator_id' | 'created_ts' | 'last_editor_id' | 'last_edited_ts'
->
-
-export type FeatureUpdateDTO = Omit<
-	Feature,
-	'creator_id' | 'created_ts' | 'last_editor_id' | 'last_edited_ts'
->
-
-export type FeatureDeleteDTO = Pick<Feature, 'id' | 'creator_id'>
-
-export const makeFeatureId = () => randomUUID()
-
-const colorHash = new ColorHash()
-export const getDefaultLayerColor = (layerUrl: string) =>
-	colorHash.hex(layerUrl)
-
-export interface LayerStateStore {
-	/** URL host:port */
-	mapServer: string
-
-	featuresById: ObservableMap<string, Feature>
-	numFeatures: number
-
-	/** undefined means not known yet, waiting to be informed by server */
-	permissions?: LayerPerms
-	/** if this is defined, the client has authenticated as a Discord account */
-	dUser?: DiscordUser
-	/**  */
-	loginDiscordAppId?: string
-
-	// these are only defined when editing is possible (e.g., not JSON-backed)
-	// TODO don't define when no perms?
-	createFeature?: (featurePartial: FeatureCreateDTO) => string
-	updateFeature?: (featurePartial: FeatureUpdateDTO) => void
-	deleteFeature?: (feature: FeatureDeleteDTO) => void
-}
+} from '../DiscordLogin'
+import { Feature } from '../Feature'
+import { LocalStorageStrStore } from '../LocalStorage'
+import { FeatureCreateDTO, FeatureDeleteDTO, FeatureUpdateDTO, LayerPerms, LayerStateStore, makeFeatureId } from './LayerStateStore'
 
 export class WSLayerStateStore implements LayerStateStore {
 	private wsc: WSClient<WSServerMessage, WSClientMessage>
@@ -230,65 +184,6 @@ export class WSLayerStateStore implements LayerStateStore {
 	}
 }
 
-export class HttpJsonLayerStateStore implements LayerStateStore {
-	mapServer: string
-	featuresById = observable.map<string, Feature>()
-	permissions: LayerPerms = {}
-
-	constructor(readonly url: string) {
-		this.mapServer = new URL(url).host
-
-		makeAutoObservable(this)
-
-		fetch(url).then(async (res) => {
-			const { features } = await res.json()
-			runInAction(() => {
-				for (const { id, ...data } of features) {
-					this.featuresById.set(id, {
-						id,
-						data,
-						created_ts: 0,
-						last_edited_ts: 0,
-						creator_id: '',
-						last_editor_id: '',
-					})
-				}
-			})
-		})
-	}
-
-	get numFeatures() {
-		return this.featuresById.size
-	}
-}
-
-export class LayerStatesStore {
-	layersByUrl = observable.map<string, LayerStateStore>()
-
-	constructor() {
-		makeAutoObservable(this)
-	}
-
-	dispose() {
-		throw new Error('Not implemented')
-	}
-
-	getByUrl(layerUrl: string) {
-		if (!layerUrl) return undefined
-		let layer = this.layersByUrl.get(layerUrl)
-		if (layer) return layer
-		if (layerUrl.startsWith('ws')) {
-			layer = new WSLayerStateStore(layerUrl)
-		} else if (layerUrl.startsWith('http')) {
-			layer = new HttpJsonLayerStateStore(layerUrl)
-		} else {
-			throw new Error('Cannot load layer state for url: ' + layerUrl)
-		}
-		this.layersByUrl.set(layerUrl, layer)
-		return layer
-	}
-}
-
 export class LoggedOutError extends Error {}
 export class PermissionError extends Error {}
 
@@ -321,16 +216,5 @@ export type LayerUserPerms = {
 	user: DiscordUser
 	last_edited_ts: number
 } & LayerPerms
-
-export interface LayerPerms {
-	/** read features created by any user. required to connect */
-	read?: boolean
-	/** create features, update/delete features created by the same user */
-	write_self?: boolean
-	/** update/delete features created by other users */
-	write_other?: boolean
-	/** change permissions of other users; add new users */
-	manage?: boolean
-}
 
 const ANONYMOUS_UID = '(anonymous)'

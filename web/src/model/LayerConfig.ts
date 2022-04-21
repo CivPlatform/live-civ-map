@@ -9,7 +9,7 @@ import {
 } from 'mobx'
 import { LocalStorageStore } from './LocalStorage'
 
-/** stored to remember known layers in the client's map */
+/** client's config for known layers */
 export type LayerConfig = { url: string; hidden?: boolean; alias?: string }
 
 export class LayerConfigStore implements LayerConfig {

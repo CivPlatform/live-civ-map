@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 import { LayerConfigsStore } from './LayerConfig'
-import { LayerStatesStore } from './LayerState'
+import { LayerStatesStore } from './LayerState/LayerStatesStore'
 
 export class RootStore {
 	layerConfigs = new LayerConfigsStore('LiveCivMap:layers')
