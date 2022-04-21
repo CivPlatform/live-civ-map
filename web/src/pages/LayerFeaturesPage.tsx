@@ -8,8 +8,8 @@ import { Float } from '../components/Float'
 import { useMobx } from '../model'
 import { mkLayerPath } from './LayerPage'
 
-export const mkLayerFeaturesPath = (layerSlug: string) =>
-	`/layer/${layerSlug}/features`
+export const mkLayerFeaturesPath = (layerUrl: string) =>
+	`${mkLayerPath(layerUrl)}/features`
 
 export const LayerFeaturesRoute = () => (
 	<Route
@@ -26,7 +26,7 @@ export const LayerFeaturesPage = observer(function LayerFeaturesPage() {
 	const features = values(layer?.featuresById!)
 	return (
 		<Float>
-			<Link to={mkLayerPath(layerSlug)} style={{ padding: '8px 16px' }}>
+			<Link to={mkLayerPath(layerUrl)} style={{ padding: '8px 16px' }}>
 				Features in Layer {layerUrl}
 			</Link>
 			<CreateFeatureMenuItem layerUrl={layerUrl} />

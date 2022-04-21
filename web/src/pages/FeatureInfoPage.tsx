@@ -6,8 +6,10 @@ import { useMobx } from '../model'
 import { mkFeatureEditPath } from './FeatureEditPage'
 import { mkLayerPath } from './LayerPage'
 
-export const mkFeatureInfoPath = (layerSlug: string, featureId: string) =>
-	`/layer/${layerSlug}/feature/${featureSlugFromId(featureId)}`
+export const mkFeaturePath = (layerUrl: string, featureId: string) =>
+	`${mkLayerPath(layerUrl)}/feature/${featureSlugFromId(featureId)}`
+
+export const mkFeatureInfoPath = mkFeaturePath
 
 export const FeatureInfoRoute = () => (
 	<Route
@@ -28,7 +30,7 @@ export const FeatureInfoPage = observer(function FeatureInfoPage() {
 		return (
 			<Float>
 				<div style={{ padding: '8px 16px' }}>Feature not loaded</div>
-				<Link to={mkLayerPath(layerSlug)} style={{ padding: '8px 16px' }}>
+				<Link to={mkLayerPath(layerUrl)} style={{ padding: '8px 16px' }}>
 					Go to Layer {layerUrl}
 				</Link>
 			</Float>
@@ -40,11 +42,11 @@ export const FeatureInfoPage = observer(function FeatureInfoPage() {
 			<button onClick={() => 0 /* TODO */} style={{ padding: '8px 16px' }}>
 				Show on map
 			</button>
-			<Link to={mkLayerPath(layerSlug)} style={{ padding: '8px 16px' }}>
+			<Link to={mkLayerPath(layerUrl)} style={{ padding: '8px 16px' }}>
 				in Layer {layerUrl}
 			</Link>
 			<Link
-				to={mkFeatureEditPath(layerSlug, featureId)}
+				to={mkFeatureEditPath(layerUrl, featureId)}
 				style={{ padding: '8px 16px' }}
 			>
 				Edit

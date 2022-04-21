@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Feature } from '../model/Feature'
-import { layerSlugFromUrl } from '../pages'
 import { mkFeatureInfoPath } from '../pages/FeatureInfoPage'
 
 export function FeaturesSelectList(props: {
@@ -30,7 +29,7 @@ export function FeaturesSelectList(props: {
 						{selectedFeatures.includes(feature.id) ? '[x]' : '[ ]'}
 					</button>
 					<Link
-						to={mkFeatureInfoPath(layerSlugFromUrl(layerUrl), feature.id)}
+						to={mkFeatureInfoPath(layerUrl, feature.id)}
 						style={{ padding: 8, paddingLeft: 16, flex: 1 }}
 					>
 						{fmtRow(feature, layerUrl)}

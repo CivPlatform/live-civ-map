@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import { Link, Route, useNavigate, useParams } from 'react-router-dom'
-import { getLayerNameFromUrl, layerUrlFromSlug } from '.'
+import { getLayerNameFromUrl, layerSlugFromUrl, layerUrlFromSlug } from '.'
 import { CircleIcon } from '../components/CircleIcon'
 import { CreateFeatureMenuItem } from '../components/CreateFeatureMenu'
 import { Float } from '../components/Float'
@@ -9,7 +9,8 @@ import { getDefaultLayerColor } from '../model/LayerState'
 import { mkLayerFeaturesPath } from './LayerFeaturesPage'
 import { layersPath } from './LayersPage'
 
-export const mkLayerPath = (layerSlug: string) => `/layer/${layerSlug}`
+export const mkLayerPath = (layerUrl: string) =>
+	`/layer/${layerSlugFromUrl(layerUrl)}`
 
 export const LayerRoute = () => (
 	<Route path={mkLayerPath(':layerSlug')} element={<LayerPage />} />
@@ -54,7 +55,7 @@ export const LayerPage = observer(function LayerPage() {
 			<CreateFeatureMenuItem layerUrl={layerUrl} />
 			<Link
 				is="button"
-				to={mkLayerFeaturesPath(layerSlug)}
+				to={mkLayerFeaturesPath(layerUrl)}
 				style={{ padding: '8px 16px', display: 'flex', alignItems: 'center' }}
 			>
 				<span style={{ flex: 1 }}>

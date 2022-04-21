@@ -5,7 +5,6 @@ import { useMatch, useNavigate } from 'react-router'
 import { useMobx } from '../model'
 import { Feature } from '../model/Feature'
 import { FeatureUpdateDTO } from '../model/LayerState/LayerStateStore'
-import { layerSlugFromUrl } from '../pages'
 import { mkFeatureEditPath } from '../pages/FeatureEditPage'
 import { mkFeatureInfoPath } from '../pages/FeatureInfoPage'
 import { CircleGeometry, EditableCircle } from './Circle'
@@ -46,15 +45,14 @@ export const EditableFeature = observer(function EditableFeature(props: {
 	const navigate = useNavigate()
 
 	const routerMatchEdit = useMatch(
-		mkFeatureEditPath(layerSlugFromUrl(props.layerUrl), props.featureId)
+		mkFeatureEditPath(props.layerUrl, props.featureId)
 	)
 
 	const onClick = useCallback(() => {
-		const layerSlug = layerSlugFromUrl(props.layerUrl)
 		navigate(
 			routerMatchEdit
-				? mkFeatureInfoPath(layerSlug, props.featureId)
-				: mkFeatureEditPath(layerSlug, props.featureId)
+				? mkFeatureInfoPath(props.layerUrl, props.featureId)
+				: mkFeatureEditPath(props.layerUrl, props.featureId)
 		)
 	}, [navigate, routerMatchEdit, props.layerUrl, props.featureId])
 

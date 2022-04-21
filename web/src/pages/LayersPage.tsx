@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite'
 import { useState } from 'react'
 import { Link, Route } from 'react-router-dom'
-import { getLayerHostFromUrl, getLayerNameFromUrl, layerSlugFromUrl } from '.'
+import { getLayerHostFromUrl, getLayerNameFromUrl } from '.'
 import { CircleIcon } from '../components/CircleIcon'
 import { Float } from '../components/Float'
 import { useMobx } from '../model'
@@ -51,7 +51,7 @@ export const LayersPage = observer(function LayersPage() {
 							key={layerConfig.url}
 						>
 							<Link
-								to={mkLayerPath(layerSlugFromUrl(layerConfig.url))}
+								to={mkLayerPath(layerConfig.url)}
 								style={{ padding: 8, paddingLeft: 16, flex: 1 }}
 							>
 								{getLayerNameFromUrl(layerConfig.url)}
